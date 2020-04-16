@@ -1,0 +1,9 @@
+version: "3"
+
+services:
+  cassandra-server:
+    build: ./db/cassandra/utils
+    volumes:
+      - ./db/cassandra/utils/:/home/"
+      - ./db/cassandra/volume:/var/lib/cassandra
+    network_mode: host
