@@ -12,7 +12,7 @@
 //
 // which says the SOA has a valid RRSIG and it validated with the DNSKEY of miek.nl,
 // which has key id 4155 and is retrieved from the server. Other values are 'disk'.
-package dnsrequester
+package main
 
 import (
 	"bufio"

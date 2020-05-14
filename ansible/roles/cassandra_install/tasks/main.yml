@@ -1,0 +1,52 @@
+---
+
+- name: Install Open JDK 8
+  become: yes
+  become_method: sudo
+  apt:
+    pkg: openjdk-8-jre
+    state: present
+
+- name: Cassandra is Present locally
+  find: 
+    paths: /home/andhael/
+    file_type: directory
+    use_regex: yes
+    patterns: '.*apache-cassandra-3.0.*'
+  register: cassandra_folder
+
+# If not present install
+
+- name: Download binaries
+  get_url:
+    url: https://downloads.apache.org/cassandra/3.0.20/apache-cassandra-3.0.20-bin.tar.gz
+    dest: ~/apache-cassandra-3.0.20-bin.tar.gz
+  when: cassandra_folder.matched == 0
+  register: downloaded_targz
+
+- name: Extract files
+  unarchive:
+    src: ~/apache-cassandra-3.0.20-bin.tar.gz
+    dest: ~/
+    remote_src: yes
+  when: downloaded_targz.changed
+  register: extracted_targz
+
+
+- name: Extract files
+  command: rm ~/apache-cassandra-3.0.20-bin.tar.gz
+  when: extracted_targz.changed and cassandra_folder.matched == 0
+
+
+- name: Register folder
+  find: 
+    paths: /home/andhael/
+    file_type: directory
+    use_regex: yes
+    patterns: '.*apache-cassandra-3.0.*'
+  register: cassandra_folder
+
+- name: Copy template to cassandra
+  template:
+    src: templates/cassandra.yaml.j2
+    dest: "{{ cassandra_folder.files[0].path }}/conf/cassandra.yaml"

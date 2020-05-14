@@ -1,0 +1,15 @@
+[servers]
+192.168.0.240
+192.168.0.241
+#192.168.0.242
+  
+[cassandra_master]
+192.168.0.240
+
+[cassandra_slaves]
+192.168.0.241
+192.168.0.242
+
+[all:vars]
+ansible_connection=ssh
+ansible_user=andhael

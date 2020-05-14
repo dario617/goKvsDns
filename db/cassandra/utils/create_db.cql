@@ -69,7 +69,7 @@ CREATE TABLE  IF NOT EXISTS domain_mx (
     id uuid,
     class smallint,
     ttl int,
-    preference smallint,
+    preference int,
     exchange text,
     PRIMARY KEY (domain_name, id)
 );
@@ -79,6 +79,6 @@ CREATE TABLE  IF NOT EXISTS domain_txt (
     id uuid,
     class smallint,
     ttl int,
-    data text,
+    txt text,
     PRIMARY KEY (domain_name, id)
 );

@@ -1,0 +1,21 @@
+---
+
+- name: Install Cassandra
+  hosts:
+    - servers
+  roles:
+    - cassandra_install
+    #- { role: cassandra_install, when: "ansible_os_family == 'Debian'" }
+    #- { role: cassandra_install, when: "ansible_os_family == 'CentOS'" }
+
+- name: Start master configuration of cassandra
+  hosts:
+  - cassandra_master
+  roles:
+    - cassandra_start
+
+- name: Run cassandra dependent nodes
+  hosts:
+  - cassandra_slaves
+  roles:
+    - cassandra_start

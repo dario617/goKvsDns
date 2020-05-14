@@ -7,7 +7,7 @@
 //   queryuploader -clusterIPs 192.168.0.2,192.168.0.3 -db cassandra -datasetFile ./file
 //
 //
-package queryuploader
+package main
 
 import (
 	"bufio"
@@ -29,60 +29,101 @@ var (
 	conf        = flag.String("conf", "./conf/conf.yml", "configuration file")
 )
 
+var values = map[string]int{
+	"IN": 1,
+}
+
 // Make a query to the database and
 // store the results on the Msg
 func makeCassandraQuery(s *gocql.Session, line string) {
 
 	// Capture tokens
-	tk := strings.Split(line, " ")
+	tk := strings.Split(line, "\t")
+	var dnsType string = tk[3]
 
-	switch tk[3] {
+	switch dnsType {
 	case "A":
 		if err := s.Query(`INSERT INTO domain_a (domain_name, id, class, ttl, address) VALUES (?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), tk[1], tk[2], tk[4]).Exec(); err != nil {
-			log.Fatal(err)
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				makeCassandraQuery(s, line)
+			} else {
+				log.Fatal("A", tk, err)
+				// Retry
+			}
 		}
-
 	case "NS":
 		if err := s.Query(`INSERT INTO domain_ns (domain_name, id, class, ttl, nsdname) VALUES (?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), tk[1], tk[2], tk[4]).Exec(); err != nil {
-			log.Fatal(err)
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				log.Fatal("NS", tk, err)
+			} else {
+				// Retry
+				makeCassandraQuery(s, line)
+			}
 		}
-
 	case "CNAME":
 		if err := s.Query(`INSERT INTO domain_cname (domain_name, id, class, ttl, domain_cname) VALUES (?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), tk[1], tk[2], tk[4]).Exec(); err != nil {
-			log.Fatal(err)
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				makeCassandraQuery(s, line)
+			} else {
+				log.Fatal("CNAME", tk, err)
+				// Retry
+			}
 		}
-
 	case "SOA":
+		soa_data := strings.Split(tk[4], " ")
 		if err := s.Query(`INSERT INTO domain_soa (domain_name, id, class, ttl, mname, rname, serial, refresh, retry, expire, minimum) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), tk[1], tk[2], tk[4], tk[5], tk[6], tk[7], tk[8], tk[9], tk[10]).Exec(); err != nil {
-			log.Fatal(err)
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], soa_data[0], soa_data[1], soa_data[2], soa_data[3], soa_data[4], soa_data[5], soa_data[6]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				makeCassandraQuery(s, line)
+			} else {
+				log.Fatal("SOA", tk, err)
+				// Retry
+			}
 		}
-
 	case "PTR":
 		if err := s.Query(`INSERT INTO domain_ptr (domain_name, id, class, ttl, ptrdname) VALUES (?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), tk[1], tk[2], tk[4]).Exec(); err != nil {
-			log.Fatal(err)
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				makeCassandraQuery(s, line)
+			} else {
+				log.Fatal("PTR", tk, err)
+				// Retry
+			}
 		}
-
 	case "HINFO":
+		hinfo_data := strings.Split(tk[4], " ")
 		if err := s.Query(`INSERT INTO domain_hinfo (domain_name, id, class, ttl, cpu, os) VALUES (?, ?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), tk[1], tk[2], tk[4], tk[5]).Exec(); err != nil {
-			log.Fatal(err)
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], hinfo_data[0], hinfo_data[1]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				makeCassandraQuery(s, line)
+			} else {
+				log.Fatal("HINFO", tk, err)
+				// Retry
+			}
 		}
-
 	case "MX":
-		if err := s.Query(`INSERT INTO domain_hinfo (domain_name, id, class, ttl, preference, exchange) VALUES (?, ?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), tk[1], tk[2], tk[4], tk[5]).Exec(); err != nil {
-			log.Fatal(err)
+		mx_data := strings.Split(tk[4], " ")
+		if err := s.Query(`INSERT INTO domain_mx (domain_name, id, class, ttl, preference, exchange) VALUES (?, ?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], mx_data[0], mx_data[1]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				makeCassandraQuery(s, line)
+			} else {
+				log.Fatal("MX", tk, err)
+				// Retry
+			}
 		}
-
 	case "TXT":
-		if err := s.Query(`INSERT INTO domain_hinfo (domain_name, id, class, ttl, data) VALUES (?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), tk[1], tk[2], tk[4], tk[5]).Exec(); err != nil {
-			log.Fatal(err)
+		if err := s.Query(`INSERT INTO domain_txt (domain_name, id, class, ttl, txt) VALUES (?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], strings.ReplaceAll(tk[4], "\"", "")).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				makeCassandraQuery(s, line)
+			} else {
+				log.Fatal("TXT", tk, err)
+				// Retry
+			}
 		}
 	}
 }
@@ -100,7 +141,10 @@ func connectToCassandra() *gocql.Session {
 
 	// Have one session to interact with the db using goroutines
 	// The session executor launches a go routine to fetch the results
-	session, _ := cluster.CreateSession()
+	session, err := cluster.CreateSession()
+	if err != nil {
+		log.Fatal("Couldn't connect to Cassandra Cluster")
+	}
 	return session
 }
 
@@ -141,10 +185,10 @@ func main() {
 			makeCassandraQuery(session, l)
 		}
 	case "redis":
-		log.Fatal("Not yet implemented")
+		log.Fatal("Redis: Not yet implemented")
 		return
 	case "pebble":
-		log.Fatal("Not yet implemented")
+		log.Fatal("Pebble: Not yet implemented")
 		return
 	}
 
