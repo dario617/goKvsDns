@@ -14,4 +14,12 @@
 # Dependency directories (remove the comment below to include it)
 # vendor/
 
-ansible/roles/examples
+scripts/ansible/roles/examples
+internal/data/raw/
+internal/data/sorted/
+internal/data/dataset
+
+# Compiled
+go-kvs-dns-server
+dnsrequester
+queryuploader
