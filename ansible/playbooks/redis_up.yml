@@ -1,0 +1,38 @@
+---
+
+  - name: Install Redis
+    hosts:
+      - servers
+    roles:
+      - redis_install
+      #- { role: cassandra_install, when: "ansible_os_family == 'Debian'" }
+      #- { role: cassandra_install, when: "ansible_os_family == 'CentOS'" }
+  
+  - name: Config and start Redis Servers
+    hosts:
+    - servers
+    roles:
+      - redis_start
+  
+  # Remember to open ports on firewall for both client and bus (+1000)
+  - name: Create Cluster
+    hosts:
+      - servers[0]
+    tasks:
+      - name: Redis is Present locally
+        find: 
+          paths: /home/andhael/
+          file_type: directory
+          use_regex: yes
+          patterns: '.*redis-5*'
+        register: redis_folder
+      - name: Start cluster
+        expect: 
+          args:
+          command: "./redis-cli --cluster  create {{redis_servers | join(' ')}} --cluster-replicas 1"
+          chdir: "{{redis_folder.files[0].path}}/src"
+          responses:
+            Question:
+              - "yes" 
+        when: redis_folder.matched > 0
+# Check state on a local cluster machine using redis-cli --cluster check [host:port]

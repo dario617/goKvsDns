@@ -33,7 +33,7 @@
   register: extracted_targz
 
 
-- name: Extract files
+- name: Remove files
   command: rm ~/apache-cassandra-3.0.20-bin.tar.gz
   when: extracted_targz.changed and cassandra_folder.matched == 0
 

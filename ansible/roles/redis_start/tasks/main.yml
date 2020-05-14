@@ -1,0 +1,34 @@
+---
+
+- name: Register folder
+  find: 
+    paths: /home/andhael/
+    file_type: directory
+    use_regex: yes
+    patterns: '.*redis-5*'
+  register: redis_folder
+
+- name: Ensures {{redis_folder.files[0].path}}/conf dir exists
+  file: 
+    path: "{{redis_folder.files[0].path}}/conf"
+    state: directory
+
+- name: Copy master template to conf directory
+  template:
+    src: templates/nodeMaster.conf.j2
+    dest: "{{ redis_folder.files[0].path}}/conf/nodeMaster.conf"
+
+- name: Copy slave template to conf directory
+  template:
+    src: templates/nodeSlave.conf.j2
+    dest: "{{ redis_folder.files[0].path}}/conf/nodeSlave.conf"
+
+- name: Start redis A on background
+  command: "./redis-server ../conf/nodeMaster.conf --daemonize yes --protected-mode {{redis_protected_mode}}"
+  args:
+    chdir: "{{redis_folder.files[0].path}}/src"
+  
+- name: Start redis B on background
+  command: "./redis-server ../conf/nodeSlave.conf --daemonize yes --protected-mode {{redis_protected_mode}}"
+  args:
+    chdir: "{{redis_folder.files[0].path}}/src"

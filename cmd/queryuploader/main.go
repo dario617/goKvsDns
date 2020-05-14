@@ -56,10 +56,10 @@ func makeCassandraQuery(s *gocql.Session, line string) {
 		if err := s.Query(`INSERT INTO domain_ns (domain_name, id, class, ttl, nsdname) VALUES (?, ?, ?, ?, ?)`,
 			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
 			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
-				log.Fatal("NS", tk, err)
-			} else {
 				// Retry
 				makeCassandraQuery(s, line)
+			} else {
+				log.Fatal("NS", tk, err)
 			}
 		}
 	case "CNAME":
@@ -181,8 +181,13 @@ func main() {
 		session := connectToCassandra()
 		defer disconnectCassandra(session)
 
+		var count uint64 = 0
 		for l := range lines {
 			makeCassandraQuery(session, l)
+			count++
+			if count%1000 == 0 {
+				fmt.Println("Did ", count)
+			}
 		}
 	case "redis":
 		log.Fatal("Redis: Not yet implemented")

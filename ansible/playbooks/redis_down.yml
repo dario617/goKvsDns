@@ -1,0 +1,23 @@
+---
+
+- name: Stop Servers Redis
+  hosts:
+    - servers
+  tasks:
+    - name: Redis is Present locally
+      find: 
+        paths: /home/andhael/
+        file_type: directory
+        use_regex: yes
+        patterns: '.*redis-5*'
+      register: redis_folder
+    - name: Stop cluster A
+      command: "./redis-cli -h 127.0.0.1 -p {{redis_master_port}} shutdown"
+      args:
+        chdir: "{{redis_folder.files[0].path}}/src" 
+      when: redis_folder.matched > 0
+    - name: Stop cluster B
+      command: "./redis-cli -h 127.0.0.1 -p {{redis_slave_port}} shutdown"
+      args:
+        chdir: "{{redis_folder.files[0].path}}/src" 
+      when: redis_folder.matched > 0

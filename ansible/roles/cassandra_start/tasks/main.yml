@@ -21,8 +21,8 @@
   shell: "{{cassandra_folder.files[0].path}}/bin/cqlsh -f ~/create_db.cql"
   register: result
   until: result.rc == 0
-  retries: 5
-  delay: 10
+  retries: 10
+  delay: 15
 
 - name: Copy Cassandra PID to file
   shell: "ps -aux | grep -e 'cassandra' | grep -v 'grep' | cut -d ' ' -f 4 > cassandra_pid"

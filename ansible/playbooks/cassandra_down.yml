@@ -1,0 +1,8 @@
+---
+
+  - name: Stop Cassandra
+    hosts:
+      - servers
+    tasks:
+      - name: Kill using pid on file
+        shell: "kill $(cat cassandra_pid)"

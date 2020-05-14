@@ -1,0 +1,50 @@
+---
+
+- name: Redis is Present locally
+  find: 
+    paths: /home/andhael/
+    file_type: directory
+    use_regex: yes
+    patterns: '.*redis-5*'
+  register: redis_folder
+
+# If not present install and compile
+
+- name: Download binaries
+  get_url:
+    url: http://download.redis.io/releases/redis-5.0.8.tar.gz
+    dest: ~/redis-5.0.8.tar.gz
+  when: redis_folder.matched == 0
+  register: downloaded_targz
+
+- name: Extract files
+  unarchive:
+    src: ~/redis-5.0.8.tar.gz
+    dest: ~/
+    remote_src: yes
+  when: downloaded_targz.changed
+  register: extracted_targz
+
+- name: Remove files
+  command: rm ~/redis-5.0.8.tar.gz
+  when: extracted_targz.changed and redis_folder.matched == 0
+
+- name: Redis is Present locally after extraction
+  find: 
+    paths: /home/andhael/
+    file_type: directory
+    use_regex: yes
+    patterns: '.*redis-5*'
+  register: redis_folder_extracted
+
+- name: Compile Redis
+  command: make
+  args:
+    chdir: "{{redis_folder_extracted.files[0].path}}"
+  when: redis_folder_extracted.matched == 1
+  register: result
+
+- name: Debug Compile result
+  debug:
+    var: result
+  when: redis_folder_extracted.matched == 1

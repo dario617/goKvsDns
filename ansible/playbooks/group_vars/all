@@ -1,0 +1,33 @@
+---
+
+cassandra_master_ip: 192.168.0.240
+cassandra_slaves:
+  - 192.168.0.241
+  - 192.168.0.242
+cassandra_cluster_name: "DNS server"
+cassandra_seeds: "{{cassandra_master_ip}},{{cassandra_slaves | join(',')}}"
+
+redis_host_1: 192.168.0.240
+redis_host_2: 192.168.0.241
+redis_host_3: 192.168.0.242
+
+# Normally 6379
+redis_port_1: 7001
+redis_port_2: 7002
+redis_port_3: 7003
+redis_port_4: 7004
+redis_port_5: 7005
+redis_port_6: 7006
+
+redis_servers:
+- "{{redis_host_1}}:{{redis_port_1}}"
+- "{{redis_host_1}}:{{redis_port_2}}"
+- "{{redis_host_2}}:{{redis_port_3}}"
+- "{{redis_host_2}}:{{redis_port_4}}"
+- "{{redis_host_3}}:{{redis_port_5}}"
+- "{{redis_host_3}}:{{redis_port_6}}"
+
+redis_protected_mode: "no"
+
+cluster_node_timeout: 5000
+cluster_require_full_coverage: "no"
