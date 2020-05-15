@@ -26,7 +26,6 @@ var (
 	datasetFile = flag.String("datasetFile", "./data/dataset/dns-rr.txt", "File to read RR from")
 	db          = flag.String("db", "cassandra", "db to connect: cassandra|redis|pebble")
 	clusterIPs  = flag.String("clusterIPs", "192.168.0.240,192.168.0.241,192.168.0.242", "comma separated IP list")
-	conf        = flag.String("conf", "./conf/conf.yml", "configuration file")
 )
 
 var values = map[string]int{

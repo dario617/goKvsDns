@@ -21,5 +21,6 @@ internal/data/dataset
 
 # Compiled
 go-kvs-dns-server
+kvs-dns
 dnsrequester
 queryuploader

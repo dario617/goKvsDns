@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strings"
 
 	"github.com/gocql/gocql"
 	"github.com/miekg/dns"
@@ -191,6 +192,105 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 				Txt: data,
 			}
 			m.Answer = append(m.Answer, rr)
+		}
+	}
+}
+
+// UploadRR to Cassandra Cluster from line
+func (c *CassandraDB) UploadRR(line string) {
+
+	var values = map[string]int{
+		"IN": 1,
+	}
+
+	s := c.session
+	// Capture tokens
+	tk := strings.Split(line, "\t")
+	var dnsType string = tk[3]
+
+	switch dnsType {
+	case "A":
+		if err := s.Query(`INSERT INTO domain_a (domain_name, id, class, ttl, address) VALUES (?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				c.UploadRR(line)
+			} else {
+				log.Fatal("A", tk, err)
+				// Retry
+			}
+		}
+	case "NS":
+		if err := s.Query(`INSERT INTO domain_ns (domain_name, id, class, ttl, nsdname) VALUES (?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				// Retry
+				c.UploadRR(line)
+			} else {
+				log.Fatal("NS", tk, err)
+			}
+		}
+	case "CNAME":
+		if err := s.Query(`INSERT INTO domain_cname (domain_name, id, class, ttl, domain_cname) VALUES (?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				c.UploadRR(line)
+			} else {
+				log.Fatal("CNAME", tk, err)
+				// Retry
+			}
+		}
+	case "SOA":
+		soaData := strings.Split(tk[4], " ")
+		if err := s.Query(`INSERT INTO domain_soa (domain_name, id, class, ttl, mname, rname, serial, refresh, retry, expire, minimum) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], soaData[0], soaData[1], soaData[2], soaData[3], soaData[4], soaData[5], soaData[6]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				c.UploadRR(line)
+			} else {
+				log.Fatal("SOA", tk, err)
+				// Retry
+			}
+		}
+	case "PTR":
+		if err := s.Query(`INSERT INTO domain_ptr (domain_name, id, class, ttl, ptrdname) VALUES (?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				c.UploadRR(line)
+			} else {
+				log.Fatal("PTR", tk, err)
+				// Retry
+			}
+		}
+	case "HINFO":
+		hinfoData := strings.Split(tk[4], " ")
+		if err := s.Query(`INSERT INTO domain_hinfo (domain_name, id, class, ttl, cpu, os) VALUES (?, ?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], hinfoData[0], hinfoData[1]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				c.UploadRR(line)
+			} else {
+				log.Fatal("HINFO", tk, err)
+				// Retry
+			}
+		}
+	case "MX":
+		mxData := strings.Split(tk[4], " ")
+		if err := s.Query(`INSERT INTO domain_mx (domain_name, id, class, ttl, preference, exchange) VALUES (?, ?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], mxData[0], mxData[1]).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				c.UploadRR(line)
+			} else {
+				log.Fatal("MX", tk, err)
+				// Retry
+			}
+		}
+	case "TXT":
+		if err := s.Query(`INSERT INTO domain_txt (domain_name, id, class, ttl, txt) VALUES (?, ?, ?, ?, ?)`,
+			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], strings.ReplaceAll(tk[4], "\"", "")).Exec(); err != nil {
+			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
+				c.UploadRR(line)
+			} else {
+				log.Fatal("TXT", tk, err)
+				// Retry
+			}
 		}
 	}
 }
