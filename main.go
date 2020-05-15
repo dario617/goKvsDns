@@ -47,7 +47,6 @@ var (
 	cpu         = flag.Int("cpu", 0, "number of cpu to use")
 	db          = flag.String("db", "cassandra", "db to connect: cassandra|redis|pebble")
 	clusterIPs  = flag.String("clusterIPs", "192.168.0.240,192.168.0.241,192.168.0.242", "comma separated IP list")
-	conf        = flag.String("conf", "./conf/conf.yml", "configuration file")
 )
 
 func main() {
@@ -68,7 +67,7 @@ func main() {
 		runtime.GOMAXPROCS(*cpu)
 	}
 
-	start()
+	start(*db, *clusterIPs)
 
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)

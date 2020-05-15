@@ -3,9 +3,18 @@ package main
 import (
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/miekg/dns"
 )
+
+// DBDriver : Database driver interface
+type DBDriver interface {
+	MakeQuery(m *dns.Msg)
+	ConnectDB(ips []string)
+	Disconnect()
+	Handle(w dns.ResponseWriter, r *dns.Msg)
+}
 
 func serve(net string, soreuseport bool) {
 	server := &dns.Server{Addr: "[::]:" + strconv.Itoa(*port), Net: net, TsigSecret: nil, ReusePort: soreuseport}
@@ -14,29 +23,22 @@ func serve(net string, soreuseport bool) {
 	}
 }
 
-func start() {
+func start(db, rawIps string) {
 
-	// Connect to db
-	switch *db {
+	var ips []string = strings.Split(rawIps, ",")
+	var driver DBDriver
+	switch db {
 	case "cassandra":
-		session := connectToCassandra()
-		dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
-			handleCassandra(w, r, session)
-		})
-		defer disconnectCassandra(session)
+		driver = new(CassandraDB)
 	case "redis":
-		client := connectToRedis()
-		dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
-			handleRedis(w, r, client)
-		})
-		defer disconnectRedis(client)
+		driver = new(RedisKVS)
 	case "etcd":
-		client := connectToEtcd()
-		dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
-			handleEtcd(w, r, client)
-		})
-		defer disconnectEtcd(client)
+		driver = new(EtcdDB)
 	}
+
+	driver.ConnectDB(ips)
+	dns.HandleFunc(".", driver.Handle)
+	defer driver.Disconnect()
 
 	if *soreuseport > 0 {
 		for i := 0; i < *soreuseport; i++ {

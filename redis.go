@@ -11,9 +11,16 @@ import (
 	"github.com/miekg/dns"
 )
 
-func makeQueryRedis(rclient *redis.ClusterClient, m *dns.Msg) {
-	var dnsq dns.Question = m.Question[0]
+// RedisKVS : Implements DBDriver and holds the redis cluster client
+type RedisKVS struct {
+	client *redis.ClusterClient
+}
 
+// MakeQuery : using a valid Redis client
+// makes a get query
+func (r *RedisKVS) MakeQuery(m *dns.Msg) {
+	var dnsq dns.Question = m.Question[0]
+	rclient := r.client
 	switch dnsq.Qtype {
 	case dns.TypeA:
 
@@ -182,30 +189,33 @@ func makeQueryRedis(rclient *redis.ClusterClient, m *dns.Msg) {
 	}
 }
 
-func disconnectRedis(rclient *redis.ClusterClient) {
-	err := rclient.Close()
+// Disconnect : Closes the Redis client
+func (r *RedisKVS) Disconnect() {
+	err := r.client.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func connectToRedis() *redis.ClusterClient {
+// ConnectDB : assign redis cluster client given the IPs and ports
+func (r *RedisKVS) ConnectDB(ips []string) {
 	// []string{":7000", ":7001", ":7002", ":7003", ":7004", ":7005"}
 	rdb := redis.NewClusterClient(&redis.ClusterOptions{
-		Addrs: strings.Split(*clusterIPs, ","),
+		Addrs: ips,
 	})
-
-	return rdb
+	r.client = rdb
 }
 
-func handleRedis(w dns.ResponseWriter, r *dns.Msg, rclient *redis.ClusterClient) {
+// Handle : function to call on the dns server when a package is received.
+// Prepares the package and calls Redis to fill it up
+func (r *RedisKVS) Handle(w dns.ResponseWriter, req *dns.Msg) {
 	m := new(dns.Msg)
-	m.SetReply(r)
+	m.SetReply(req)
 
 	if *printf {
 		fmt.Printf("%v\n", m.String())
 	}
 
-	makeQueryRedis(rclient, m)
+	r.MakeQuery(m)
 	w.WriteMsg(m)
 }
