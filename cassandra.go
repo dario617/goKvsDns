@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net"
 	"strings"
@@ -17,7 +16,7 @@ type CassandraDB struct {
 
 // MakeQuery : using a valid session stored on CassandraDB makes a get
 // query to the desired database
-func (c *CassandraDB) MakeQuery(m *dns.Msg) {
+func (c *CassandraDB) MakeQuery(m *dns.Msg) int {
 
 	var dnsq dns.Question = m.Question[0]
 	s := c.session
@@ -39,7 +38,8 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 			m.Answer = append(m.Answer, rr)
 		}
 		if err := iter.Close(); err != nil {
-			log.Fatal(err)
+			log.Printf("Error on Cassandra %v", err)
+			return 2 // Server Problem
 		}
 	case dns.TypeNS:
 
@@ -58,7 +58,8 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 			m.Answer = append(m.Answer, rr)
 		}
 		if err := iter.Close(); err != nil {
-			log.Fatal(err)
+			log.Printf("Error on Cassandra %v", err)
+			return 2 // Server Problem
 		}
 	case dns.TypeCNAME:
 
@@ -77,7 +78,8 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 			m.Answer = append(m.Answer, rr)
 		}
 		if err := iter.Close(); err != nil {
-			log.Fatal(err)
+			log.Printf("Error on Cassandra %v", err)
+			return 2 // Server Problem
 		}
 	case dns.TypeSOA:
 
@@ -107,7 +109,8 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 			m.Answer = append(m.Answer, rr)
 		}
 		if err := iter.Close(); err != nil {
-			log.Fatal(err)
+			log.Printf("Error on Cassandra %v", err)
+			return 2 // Server Problem
 		}
 	case dns.TypePTR:
 
@@ -126,7 +129,8 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 			m.Answer = append(m.Answer, rr)
 		}
 		if err := iter.Close(); err != nil {
-			log.Fatal(err)
+			log.Printf("Error on Cassandra %v", err)
+			return 2 // Server Problem
 		}
 	case dns.TypeHINFO:
 
@@ -147,7 +151,8 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 			m.Answer = append(m.Answer, rr)
 		}
 		if err := iter.Close(); err != nil {
-			log.Fatal(err)
+			log.Printf("Error on Cassandra %v", err)
+			return 2 // Server Problem
 		}
 	case dns.TypeMX:
 
@@ -168,7 +173,8 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 			m.Answer = append(m.Answer, rr)
 		}
 		if err := iter.Close(); err != nil {
-			log.Fatal(err)
+			log.Printf("Error on Cassandra %v", err)
+			return 2 // Server Problem
 		}
 	case dns.TypeTXT:
 
@@ -184,16 +190,20 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) {
 		for iter.Scan(&domainName, &id, &class, &current, &ttl) {
 			data = append(data, current)
 		}
+		rr := &dns.TXT{
+			Hdr: dns.RR_Header{Name: domainName, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: ttl},
+			Txt: data,
+		}
+		m.Answer = append(m.Answer, rr)
 		if err := iter.Close(); err != nil {
-			log.Fatal(err)
-		} else {
-			rr := &dns.TXT{
-				Hdr: dns.RR_Header{Name: domainName, Rrtype: dns.TypeTXT, Class: dns.ClassINET, Ttl: ttl},
-				Txt: data,
-			}
-			m.Answer = append(m.Answer, rr)
+			log.Printf("Error on Cassandra %v", err)
+			return 2 // Server Problem
 		}
 	}
+	if len(m.Answer) >= 1 {
+		return 0 // No error
+	}
+	return 3 // Domain name does not exists
 }
 
 // UploadRR to Cassandra Cluster from line
@@ -323,9 +333,15 @@ func (c *CassandraDB) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	m.SetReply(r)
 
 	if *printf {
-		fmt.Printf("%v\n", m.String())
+		logQuery(r)
 	}
 
-	c.MakeQuery(m)
-	w.WriteMsg(m)
+	if r.MsgHdr.Authoritative {
+		rcode := c.MakeQuery(m)
+		m.MsgHdr.Rcode = rcode
+		w.WriteMsg(m)
+	} else {
+		m.MsgHdr.Rcode = 4 // Not implemented
+		w.WriteMsg(m)
+	}
 }

@@ -1,15 +1,30 @@
 ---
 
-cassandra_master_ip: 192.168.0.240
+remote_user: andhael
+
+host_1: 192.168.0.240
+host_2: 192.168.0.241
+host_3: 192.168.0.242
+
+# Change the token for production
+etcd_token: "db37d21181592000efad06f87a00afba59f9c99b11e119d118be2b929c3387ce"
+etcd_port: 2380
+etcd_advertise_port: 2379
+etcd_names: 
+- "Machine1"
+- "Machine2"
+- "Machine3"
+
+cassandra_master_ip: "{{host_1}}"
 cassandra_slaves:
-  - 192.168.0.241
-  - 192.168.0.242
+  - "{{host_2}}"
+  - "{{host_3}}"
 cassandra_cluster_name: "DNS server"
 cassandra_seeds: "{{cassandra_master_ip}},{{cassandra_slaves | join(',')}}"
 
-redis_host_1: 192.168.0.240
-redis_host_2: 192.168.0.241
-redis_host_3: 192.168.0.242
+redis_host_1: "{{host_1}}"
+redis_host_2: "{{host_2}}"
+redis_host_3: "{{host_3}}"
 
 # Normally 6379
 redis_port_1: 7001

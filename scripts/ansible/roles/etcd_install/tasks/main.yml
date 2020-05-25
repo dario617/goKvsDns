@@ -1,0 +1,98 @@
+---
+
+- name: Etcd is Present locally
+  find:
+    paths: "/usr/local/bin/"
+    use_regex: yes
+    patterns: 'etcd.*'
+  register: etcd_files
+
+- name: Download Etcd Release v3.4.0
+  get_url:
+    url: https://storage.googleapis.com/etcd/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
+    dest: ~/etcd-v3.4.0-linux-amd64.tar.gz
+  when: etcd_files.matched == 0
+  register: downloaded_targz
+
+- name: Extract files
+  unarchive:
+    src: ~/etcd-v3.4.0-linux-amd64.tar.gz
+    dest: ~/
+    remote_src: yes
+  when: downloaded_targz.changed
+  register: extracted_targz
+
+- name: Remove files
+  command: rm ~/etcd-v3.4.0-linux-amd64.tar.gz
+  when: extracted_targz.changed and etcd_folder.matched == 0
+
+- name: Etcd is Present locally after extraction
+  find:
+    paths: "/home/{{remote_user}}/"
+    file_type: directory
+    use_regex: yes
+    patterns: 'etcd-v.*$'
+  register: etcd_folder_extracted
+
+- name: Check etcd directory
+  stat:
+    path: /usr/local/bin/etcd
+  register: etcd_home
+
+- name: Create etcd home if necessary
+  file:
+    path: /usr/local/bin/etcd
+    state: directory
+    mode: 0755
+  become: yes
+  when: etcd_home.stat.exists == false
+  
+- name: Move files to /usr/local/bin
+  command:  
+  cmd: 
+    - mv etcd /usr/local/bin/etcd
+    - mv etcdctl /usr/local/bin/etcdctl
+  chdir: tcd_folder_extracted.files[0].path
+  become: yes
+  when: etcd_folder_extracted.matched != 0
+    
+- name: Check if user exists
+  getent:
+    database: passwd # required. The name of a getent database supported by the target system (passwd, group, hosts, etc).
+    fail_key: yes # not required. If a supplied key is missing this will make the task fail if C(yes).
+    key: etcd # not required. Key from which to return values from the specified database, otherwise the full contents are returned.
+    register: user_exists
+
+- name: Check that group exists
+  group:
+      name: etcd
+      state: present # not required. choices: absent;present. Whether the group should be present or not on the remote host.
+      gid: 1501 # not required. Optional I(GID) to set for the group..
+  register: group_exists
+
+- name: Add the user 'etcd' with a uid 1501 and a primary group of 'etcd'
+  user:
+    name: ectd
+    comment: etcd user
+    uid: 1501
+    group: "{{remote_user}},etcd"
+    home: /var/lib/etcd
+    shell: /bin/false
+  become: yes
+  when: user_exists is failed
+        
+- name: Change etcd home permissions
+  file:
+    path: /usr/local/bin/etcd
+    state: directory
+    mode: 0755
+    group: "{{remote_user}},etcd"
+    owner: etcd
+  become: yes
+  when: etcd_home.stat.exists == false
+
+- name: Add the template to systemd
+  template:
+      dest: /lib/systemd/system/etcd.service
+      src:  templates/etcd.service.j2
+  become: yes

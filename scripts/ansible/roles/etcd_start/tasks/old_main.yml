@@ -1,0 +1,46 @@
+---
+
+- name: Etcd is Present locally
+  find:
+    paths: "/home/{{remote_user}}/"
+    file_type: directory
+    use_regex: yes
+    patterns: 'etcd-v.*$'
+  register: etcd_folder
+
+- name: Start etcd on x86
+  command: 
+    cmd: "./etcd --data-dir=data.etcd --name ${THIS_NAME} \
+    --initial-advertise-peer-urls http://${THIS_IP}:{{etcd_port}} --listen-peer-urls http://${THIS_IP}:{{etcd_port}} \
+    --advertise-client-urls http://${THIS_IP}:{{etcd_advertise_port}} --listen-client-urls http://${THIS_IP}:{{etcd_advertise_port}} \
+    --initial-cluster ${CLUSTER} \
+    --initial-cluster-state ${CLUSTER_STATE} --initial-cluster-token ${TOKEN}"
+    chdir: "{{etcd_folder.files[0].path}}"
+  environment:
+    TOKEN: "{{etcd_token}}"
+    THIS_NAME: "{{name}}"
+    CLUSTER_STATE: new
+    THIS_IP: "{{ansible_default_ipv4.address}}"
+    CLUSTER: "{{etcd_names[0]}}=http://{{host_1}}:{{etcd_port}},{{etcd_names[1]}}=http://{{host_2}}:{{etcd_port}},{{etcd_names[2]}}=http://{{host_3}}:{{etcd_port}}"
+  register: output
+  when: "'{{ansible_architecture}}' == 'x86_64'"
+
+- name: Start etcd on arm6 arm7
+  command: 
+    cmd: "./etcd ETCD_UNSUPPORTED_ARCH=arm --data-dir=data.etcd --name ${THIS_NAME} \
+    --initial-advertise-peer-urls http://${THIS_IP}:{{etcd_port}} --listen-peer-urls http://${THIS_IP}:{{etcd_port}} \
+    --advertise-client-urls http://${THIS_IP}:{{etcd_advertise_port}} --listen-client-urls http://${THIS_IP}:{{etcd_advertise_port}} \
+    --initial-cluster ${CLUSTER} \
+    --initial-cluster-state ${CLUSTER_STATE} --initial-cluster-token ${TOKEN}"
+    chdir: "{{etcd_folder.files[0].path}}"
+  environment:
+    TOKEN: "{{etcd_token}}"
+    THIS_NAME: "{{name}}"
+    CLUSTER_STATE: new
+    THIS_IP: "{{ansible_default_ipv4.address}}"
+    CLUSTER: "{{etcd_names[0]}}=http://{{host_1}}:{{etcd_port}},{{etcd_names[1]}}=http://{{host_2}}:{{etcd_port}},{{etcd_names[2]}}=http://{{host_3}}:{{etcd_port}}"
+  register: output
+  when: "'{{ansible_architecture}}' == 'arm7l' or '{{ansible_architecture}}' == 'arm6l'"
+
+- name: Copy Etcd PID to file
+  shell: "ps -aux | grep -e 'etcd' | grep -v 'grep' | cut -d ' ' -f 4 > etcd_pid"

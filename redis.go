@@ -18,7 +18,7 @@ type RedisKVS struct {
 
 // MakeQuery : using a valid Redis client
 // makes a get query
-func (r *RedisKVS) MakeQuery(m *dns.Msg) {
+func (r *RedisKVS) MakeQuery(m *dns.Msg) int {
 	var dnsq dns.Question = m.Question[0]
 	rclient := r.client
 	switch dnsq.Qtype {
@@ -28,7 +28,8 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 		if err == redis.Nil {
 			fmt.Println("no value found")
 		} else if err != nil {
-			panic(err)
+			log.Printf("Error on Etcd %v", err)
+			return 2 // Server Problem
 		} else {
 			for i := range rrVal {
 				// TTL ADDRESS
@@ -48,7 +49,8 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 		if err == redis.Nil {
 			fmt.Println("no value found")
 		} else if err != nil {
-			panic(err)
+			log.Printf("Error on Etcd %v", err)
+			return 2 // Server Problem
 		} else {
 			for i := range rrVal {
 				// TTL NSDNAME
@@ -67,7 +69,8 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 		if err == redis.Nil {
 			fmt.Println("no value found")
 		} else if err != nil {
-			panic(err)
+			log.Printf("Error on Etcd %v", err)
+			return 2 // Server Problem
 		} else {
 			for i := range rrVal {
 				// TTL DOMAIN_NAME
@@ -86,7 +89,8 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 		if err == redis.Nil {
 			fmt.Println("no value found")
 		} else if err != nil {
-			panic(err)
+			log.Printf("Error on Etcd %v", err)
+			return 2 // Server Problem
 		} else {
 			for i := range rrVal {
 				// ttl mname rname serial refresh retry expire minimum
@@ -116,7 +120,8 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 		if err == redis.Nil {
 			fmt.Println("no value found")
 		} else if err != nil {
-			panic(err)
+			log.Printf("Error on Etcd %v", err)
+			return 2 // Server Problem
 		} else {
 			for i := range rrVal {
 				// TTL PTRDNAME
@@ -135,7 +140,8 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 		if err == redis.Nil {
 			fmt.Println("no value found")
 		} else if err != nil {
-			panic(err)
+			log.Printf("Error on Etcd %v", err)
+			return 2 // Server Problem
 		} else {
 			for i := range rrVal {
 				// TTL CPU OS
@@ -156,7 +162,8 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 		if err == redis.Nil {
 			fmt.Println("no value found")
 		} else if err != nil {
-			panic(err)
+			log.Printf("Error on Etcd %v", err)
+			return 2 // Server Problem
 		} else {
 			for i := range rrVal {
 				// TTL preference exchange
@@ -177,7 +184,8 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 		if err == redis.Nil {
 			fmt.Println("no value found")
 		} else if err != nil {
-			panic(err)
+			log.Printf("Error on Etcd %v", err)
+			return 2 // Server Problem
 		} else {
 			ttl, _ := strconv.Atoi(rrVal[0])
 			rr := &dns.TXT{
@@ -187,6 +195,11 @@ func (r *RedisKVS) MakeQuery(m *dns.Msg) {
 			m.Answer = append(m.Answer, rr)
 		}
 	}
+
+	if len(m.Answer) >= 1 {
+		return 0 // No error
+	}
+	return 3 // Domain name does not exists
 }
 
 // Disconnect : Closes the Redis client
@@ -213,9 +226,15 @@ func (r *RedisKVS) Handle(w dns.ResponseWriter, req *dns.Msg) {
 	m.SetReply(req)
 
 	if *printf {
-		fmt.Printf("%v\n", m.String())
+		logQuery(req)
 	}
 
-	r.MakeQuery(m)
-	w.WriteMsg(m)
+	if req.MsgHdr.Authoritative {
+		rcode := r.MakeQuery(m)
+		m.MsgHdr.Rcode = rcode
+		w.WriteMsg(m)
+	} else {
+		m.MsgHdr.Rcode = 4 // Not implemented
+		w.WriteMsg(m)
+	}
 }

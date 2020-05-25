@@ -2,7 +2,7 @@
 
 - name: Redis is Present locally
   find: 
-    paths: /home/andhael/
+    paths: "/home/{{remote_user}}/"
     file_type: directory
     use_regex: yes
     patterns: '.*redis-5*'
@@ -31,7 +31,7 @@
 
 - name: Redis is Present locally after extraction
   find: 
-    paths: /home/andhael/
+    paths: "/home/{{remote_user}}/"
     file_type: directory
     use_regex: yes
     patterns: '.*redis-5*'

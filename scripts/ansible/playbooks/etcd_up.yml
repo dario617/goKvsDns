@@ -1,0 +1,14 @@
+---
+
+  - name: Install etcd
+    hosts:
+      - servers
+
+    roles:
+      - etcd_install
+    
+  - name: Start etcd
+    hosts:
+      - servers
+    roles:
+      - etcd_start

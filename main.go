@@ -67,10 +67,12 @@ func main() {
 		runtime.GOMAXPROCS(*cpu)
 	}
 
-	start(*db, *clusterIPs)
+	var driver = start(*db, *clusterIPs)
+	defer driver.Disconnect()
 
+	log.Println("Waiting for requests or SIGINT")
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	s := <-sig
-	fmt.Printf("Signal (%s) received, stopping\n", s)
+	fmt.Printf("\nSignal (%s) received, stopping\n", s)
 }

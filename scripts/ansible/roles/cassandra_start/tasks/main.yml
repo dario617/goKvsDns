@@ -2,7 +2,7 @@
 
 - name: Register folder
   find: 
-    paths: /home/andhael/
+    paths: "/home/{{remote_user}}/"
     file_type: directory
     use_regex: yes
     patterns: '.*apache-cassandra-3.0.*'

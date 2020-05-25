@@ -5,7 +5,7 @@ This is a DNS Server that uses one of three Key Value Databases (Cassandra is a 
 This application uses Redis, Cassandra or Etcd to store the RRs in a distributed fashion. This allows us to have atomic updates for each record, easy RR distribution accross a datacenter or multiple datacenters and reliability. 
 
 
-No DNSSec is to be implemented.
+TODO: DNSSec, Zone Transfer.
 
 ## System requirements
 
@@ -33,13 +33,10 @@ The connection assumes the following:
 * The same user is present on every system.
 * You have root privileges for each user.
 
-Run the following scripts
+Then you need to add your servers to the Ansible inventory. Go over to scripts/inventory/hosts and modify your IP addresses and ports if the default ports are already in use. Add the IP port:combination to the Makefile variables and the database name.
+
+To start the server 
 ```shell
-$ Make setup
-$ go build
+$ make run
 ```
-then start the server with your
-```shell
-$ Make start "db"
-$ ./go-dns-server --db dbname
-```
+Ansible will prompt you asking for the sudo password to install the db on the remote servers.
