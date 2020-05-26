@@ -21,7 +21,7 @@ On each machine:
 * The following ports, which you can configure on the ansible inventory/group_vars
   * Redis: 7001,7002,7003,7004,7005,7006 and 17001,17002,17003,17004,17005,17006 since Redis uses "server port + 10" for intercluster gossip.
   * Cassandra: 7000, 9042, 9160
-  * Etcd: **SOME PORT**
+  * Etcd: 2380, 2379
 
 Ansible will compile each database on the system checking for the system requirements.
 

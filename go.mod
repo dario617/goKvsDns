@@ -1,4 +1,4 @@
-module github.com/dario617/go-kvs-dns-server
+module github.com/dario617/goKvsDns
 
 go 1.14
 
