@@ -5,17 +5,17 @@ Documentation=https://github.com/coreos/etcd
 [Service]
 User=etcd
 Type=notify
-ExecStart=/usr/local/bin/etcd \\
- --name {{name}} \\
- --data-dir /var/lib/etcd \\
- --initial-advertise-peer-urls http://{{ansible_default_ipv4.address}}:{{etcd_port}} \\
- --listen-peer-urls http://{{ansible_default_ipv4.address}}:{{etcd_port}} \\
- --listen-client-urls http://{{ansible_default_ipv4.address}}:2379,http://127.0.0.1:{{etcd_advertise_port}} \\
- --advertise-client-urls http://{{ansible_default_ipv4.address}}:{{etcd_advertise_port}} \\
- --initial-cluster-token {{etcd_token}} \\
- --initial-cluster {{etcd_names[0]}}=http://{{host_1}}:{{etcd_port}},{{etcd_names[1]}}=http://{{host_2}}:{{etcd_port}},{{etcd_names[2]}}=http://{{host_3}}:{{etcd_port}} \\
- --initial-cluster-state new \\
- --heartbeat-interval 1000 \\
+ExecStart=/usr/local/bin/etcd \
+ --name {{name}} \
+ --data-dir /var/lib/etcd \
+ --initial-advertise-peer-urls http://{{ansible_default_ipv4.address}}:{{etcd_port}} \
+ --listen-peer-urls http://{{ansible_default_ipv4.address}}:{{etcd_port}} \
+ --listen-client-urls http://{{ansible_default_ipv4.address}}:2379,http://127.0.0.1:{{etcd_advertise_port}} \
+ --advertise-client-urls http://{{ansible_default_ipv4.address}}:{{etcd_advertise_port}} \
+ --initial-cluster-token {{etcd_token}} \
+ --initial-cluster {{etcd_names[0]}}=http://{{host_1}}:{{etcd_port}},{{etcd_names[1]}}=http://{{host_2}}:{{etcd_port}},{{etcd_names[2]}}=http://{{host_3}}:{{etcd_port}} \
+ --initial-cluster-state new \
+ --heartbeat-interval 1000 \
  --election-timeout 5000
 Restart=on-failure
 RestartSec=5

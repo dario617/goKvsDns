@@ -24,72 +24,53 @@
 
 - name: Remove files
   command: rm ~/etcd-v3.4.0-linux-amd64.tar.gz
-  when: extracted_targz.changed and etcd_folder.matched == 0
+  when: extracted_targz.changed
 
 - name: Etcd is Present locally after extraction
   find:
     paths: "/home/{{remote_user}}/"
     file_type: directory
     use_regex: yes
-    patterns: 'etcd-v.*$'
+    patterns: 'etcd-v3.4.0.*$'
   register: etcd_folder_extracted
-
-- name: Check etcd directory
-  stat:
-    path: /usr/local/bin/etcd
-  register: etcd_home
-
-- name: Create etcd home if necessary
-  file:
-    path: /usr/local/bin/etcd
-    state: directory
-    mode: 0755
-  become: yes
-  when: etcd_home.stat.exists == false
   
 - name: Move files to /usr/local/bin
   command:  
-  cmd: 
-    - mv etcd /usr/local/bin/etcd
-    - mv etcdctl /usr/local/bin/etcdctl
-  chdir: tcd_folder_extracted.files[0].path
+    cmd: cp -t /usr/local/bin/ etcd etcdctl
+    chdir: "{{etcd_folder_extracted.files[0].path}}"
   become: yes
   when: etcd_folder_extracted.matched != 0
     
-- name: Check if user exists
-  getent:
-    database: passwd # required. The name of a getent database supported by the target system (passwd, group, hosts, etc).
-    fail_key: yes # not required. If a supplied key is missing this will make the task fail if C(yes).
-    key: etcd # not required. Key from which to return values from the specified database, otherwise the full contents are returned.
-    register: user_exists
-
 - name: Check that group exists
   group:
       name: etcd
       state: present # not required. choices: absent;present. Whether the group should be present or not on the remote host.
       gid: 1501 # not required. Optional I(GID) to set for the group..
+  become: yes
   register: group_exists
 
-- name: Add the user 'etcd' with a uid 1501 and a primary group of 'etcd'
+- name: Add the user 'etcd' with a uid 1202 and a primary group of 'etcd'
   user:
-    name: ectd
-    comment: etcd user
-    uid: 1501
-    group: "{{remote_user}},etcd"
+    comment: etcd admin user
+    name: etcd
+    uid: 1202
+    group: etcd
+    groups: "{{remote_user}},etcd"
     home: /var/lib/etcd
     shell: /bin/false
+    update_password: always
+    password: "{{ etcdpass | password_hash('sha512')}}"
   become: yes
-  when: user_exists is failed
-        
+  ignore_errors: yes
+
 - name: Change etcd home permissions
   file:
-    path: /usr/local/bin/etcd
+    path: /var/lib/etcd
     state: directory
-    mode: 0755
-    group: "{{remote_user}},etcd"
+    group: etcd
     owner: etcd
+    recurse: yes
   become: yes
-  when: etcd_home.stat.exists == false
 
 - name: Add the template to systemd
   template:
