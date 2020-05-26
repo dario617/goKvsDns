@@ -18,7 +18,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	gkvs "github.com/dario617/goKvsDns"
+	gkvs "github.com/dario617/goKvsDns/internal/server"
 )
 
 var (
