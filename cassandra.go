@@ -207,7 +207,7 @@ func (c *CassandraDB) MakeQuery(m *dns.Msg) int {
 }
 
 // UploadRR to Cassandra Cluster from line
-func (c *CassandraDB) UploadRR(line string) {
+func (c *CassandraDB) UploadRR(line string) error {
 
 	var values = map[string]int{
 		"IN": 1,
@@ -225,7 +225,8 @@ func (c *CassandraDB) UploadRR(line string) {
 			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
 				c.UploadRR(line)
 			} else {
-				log.Fatal("A", tk, err)
+				log.Printf("Error uploading A %s", tk)
+				return err
 				// Retry
 			}
 		}
@@ -236,7 +237,8 @@ func (c *CassandraDB) UploadRR(line string) {
 				// Retry
 				c.UploadRR(line)
 			} else {
-				log.Fatal("NS", tk, err)
+				log.Printf("Error uploading NS %s", tk)
+				return err
 			}
 		}
 	case "CNAME":
@@ -245,7 +247,8 @@ func (c *CassandraDB) UploadRR(line string) {
 			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
 				c.UploadRR(line)
 			} else {
-				log.Fatal("CNAME", tk, err)
+				log.Printf("Error uploading CNAME %s", tk)
+				return err
 				// Retry
 			}
 		}
@@ -256,17 +259,25 @@ func (c *CassandraDB) UploadRR(line string) {
 			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
 				c.UploadRR(line)
 			} else {
-				log.Fatal("SOA", tk, err)
+				log.Printf("Error uploading SOA %s", tk)
+				return err
 				// Retry
 			}
 		}
 	case "PTR":
+		// Check that domain name is in-addr.arpa compliant
+		// Just in case the record was added as an IP and answer
+		var domain string = tk[0]
+		if strings.Contains(domain, "in-addr.arpa") {
+			domain, _ = dns.ReverseAddr(domain)
+		}
 		if err := s.Query(`INSERT INTO domain_ptr (domain_name, id, class, ttl, ptrdname) VALUES (?, ?, ?, ?, ?)`,
-			tk[0], gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
+			domain, gocql.TimeUUID(), values[tk[2]], tk[1], tk[4]).Exec(); err != nil {
 			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
 				c.UploadRR(line)
 			} else {
-				log.Fatal("PTR", tk, err)
+				log.Printf("Error uploading PTR %s", tk)
+				return err
 				// Retry
 			}
 		}
@@ -277,7 +288,8 @@ func (c *CassandraDB) UploadRR(line string) {
 			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
 				c.UploadRR(line)
 			} else {
-				log.Fatal("HINFO", tk, err)
+				log.Printf("Error uploading HINFO %s", tk)
+				return err
 				// Retry
 			}
 		}
@@ -288,7 +300,8 @@ func (c *CassandraDB) UploadRR(line string) {
 			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
 				c.UploadRR(line)
 			} else {
-				log.Fatal("MX", tk, err)
+				log.Printf("Error uploading MX %s", tk)
+				return err
 				// Retry
 			}
 		}
@@ -298,11 +311,19 @@ func (c *CassandraDB) UploadRR(line string) {
 			if err == gocql.ErrTimeoutNoResponse || err == gocql.ErrConnectionClosed {
 				c.UploadRR(line)
 			} else {
-				log.Fatal("TXT", tk, err)
+				log.Printf("Error uploading TXT %s", tk)
+				return err
 				// Retry
 			}
 		}
 	}
+	return nil
+}
+
+// HandleFile reads a file containing RRs a uploads them replacing if set
+func (c *CassandraDB) HandleFile(location string, replace bool) {
+	log.Println("Not implemented")
+	return
 }
 
 // Disconnect : ends the cassandra session

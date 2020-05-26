@@ -11,11 +11,14 @@ import (
 // DBDriver : Database driver interface
 type DBDriver interface {
 	MakeQuery(m *dns.Msg) int
+	UploadRR(line string) error
+	HandleFile(location string, replace bool)
 	ConnectDB(ips []string)
 	Disconnect()
 	Handle(w dns.ResponseWriter, r *dns.Msg)
 }
 
+// Unified query logging
 func logQuery(m *dns.Msg) {
 	log.Printf("%v\n", m.String())
 }
