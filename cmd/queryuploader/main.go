@@ -59,7 +59,7 @@ func main() {
 	go readFile(lines, *datasetFile)
 
 	// Connect to db
-	var driver gksv.DBDriver
+	var driver gkvs.DBDriver
 	switch *db {
 	case "cassandra":
 		driver = new(gksv.CassandraDB)
