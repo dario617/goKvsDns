@@ -1,4 +1,4 @@
-[![Release](https://img.shields.io/github/release/golang-standards/project-layout.svg?style=flat-square)](https://github.com/golang-standards/project-layout/releases/latest)
+[![Release](https://img.shields.io/github/release/golang-standards/project-layout.svg?style=flat-square)](https://github.com/dario617/goKvsDns/releases/latest)
 
 # Key Value Store DNS Server
 
