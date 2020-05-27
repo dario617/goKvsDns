@@ -31,7 +31,7 @@ func serve(net string, soreuseport bool, port int) {
 	log.Printf("Started a server on port %d...\n", port)
 }
 
-func start(db, rawIps string, soreuseport, port int, verbose bool) DBDriver {
+func Start(db, rawIps string, soreuseport, port int, verbose bool) DBDriver {
 
 	var ips []string = strings.Split(rawIps, ",")
 	var driver DBDriver

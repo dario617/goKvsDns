@@ -3,7 +3,7 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
-BINARY_NAME=kvs-dns
+BINARY_NAME=KvsDns
 
 # Database config
 # Select from cassandra,redis,etcd

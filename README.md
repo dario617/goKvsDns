@@ -1,11 +1,16 @@
-# Go-KVS-DNS-Server
+[![Release](https://img.shields.io/github/release/golang-standards/project-layout.svg?style=flat-square)](https://github.com/golang-standards/project-layout/releases/latest)
+
+# Key Value Store DNS Server
 
 This is a DNS Server that uses one of three Key Value Databases (Cassandra is a Column Database but we use it as if) as a DNS Resource Record Backend to answer queries.
 
 This application uses Redis, Cassandra or Etcd to store the RRs in a distributed fashion. This allows us to have atomic updates for each record, easy RR distribution accross a datacenter or multiple datacenters and reliability. 
 
-
 TODO: DNSSec, Zone Transfer.
+
+## ̀`Disclaimer`
+
+Currently a **Work in Progress**. Intended as a research application.
 
 ## System requirements
 
@@ -35,8 +40,17 @@ The connection assumes the following:
 
 Then you need to add your servers to the Ansible inventory. Go over to scripts/inventory/hosts and modify your IP addresses and ports if the default ports are already in use. Add the IP port:combination to the Makefile variables and the database name.
 
+To Build
+```shell
+$ make build
+```
+
 To start the server 
 ```shell
 $ make run
 ```
 Ansible will prompt you asking for the sudo password to install the db on the remote servers.
+
+## Utils
+
+TODO

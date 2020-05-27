@@ -12,13 +12,13 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
-	gkvs "github.com/dario617/goKvsDns/internal/server"
+	"github.com/dario617/goKvsDns/internal/server"
 )
 
 var (
@@ -59,36 +59,36 @@ func main() {
 	go readFile(lines, *datasetFile)
 
 	// Connect to db
-	var driver gkvs.DBDriver
+	var driver server.DBDriver
 	switch *db {
 	case "cassandra":
-		driver = new(gksv.CassandraDB)
+		driver = new(server.CassandraDB)
 	case "redis":
-		driver = new(gksv.RedisKVS)
+		driver = new(server.RedisKVS)
 	case "etcd":
-		driver = new(gksv.EtcdDB)
+		driver = new(server.EtcdDB)
 	}
 
-	driver.ConnectDB(*clusterIPs)
+	driver.ConnectDB(strings.Split(",", *clusterIPs))
 	log.Printf("DB %s connected for cluster %v\n", *db, *clusterIPs)
 	defer driver.Disconnect()
 
-	go func (){
+	go func() {
 		var count uint64 = 0
 		for l := range lines {
 			err := driver.UploadRR(l)
-			if err != nil{
-				log.Printf("Error uploading %s: %v",l,err)
+			if err != nil {
+				log.Printf("Error uploading %s: %v", l, err)
 			}
 			count++
 			if count%1000 == 0 {
-				fmt.Println("Did ", count)
+				log.Println("Did ", count)
 			}
 		}
-	}
+	}()
 
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	s := <-sig
-	fmt.Printf("Signal (%s) received, stopping\n", s)
+	log.Printf("Signal (%s) received, stopping\n", s)
 }

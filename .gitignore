@@ -20,7 +20,7 @@ internal/data/sorted/
 internal/data/dataset
 
 # Compiled
-go-kvs-dns-server
-kvs-dns
+goKvsDns
+KvsDns
 dnsrequester
 queryuploader

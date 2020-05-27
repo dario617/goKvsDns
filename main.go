@@ -37,6 +37,8 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"syscall"
+
+	"github.com/dario617/goKvsDns/internal/server"
 )
 
 var (
@@ -67,7 +69,7 @@ func main() {
 		runtime.GOMAXPROCS(*cpu)
 	}
 
-	var driver = server.start(*db, *clusterIPs, *soreuseport, *port, *printf)
+	var driver = server.Start(*db, *clusterIPs, *soreuseport, *port, *printf)
 	defer driver.Disconnect()
 
 	log.Println("Waiting for requests or SIGINT")
