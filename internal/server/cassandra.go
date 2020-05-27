@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"log"
@@ -12,6 +12,7 @@ import (
 // CassandraDB : Implements DBDriver and holds the cassandra session
 type CassandraDB struct {
 	session *gocql.Session
+	print   bool
 }
 
 // MakeQuery : using a valid session stored on CassandraDB makes a get
@@ -353,7 +354,7 @@ func (c *CassandraDB) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 
-	if *printf {
+	if c.print {
 		logQuery(r)
 	}
 

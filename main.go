@@ -67,7 +67,7 @@ func main() {
 		runtime.GOMAXPROCS(*cpu)
 	}
 
-	var driver = gkvs.start(*db, *clusterIPs)
+	var driver = server.start(*db, *clusterIPs, *soreuseport, *port, *printf)
 	defer driver.Disconnect()
 
 	log.Println("Waiting for requests or SIGINT")

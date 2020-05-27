@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -16,6 +16,7 @@ import (
 type EtcdDB struct {
 	client  *clientv3.Client
 	timeout time.Duration
+	print   bool
 }
 
 // Disconnect : Closes the Ectd client
@@ -349,7 +350,7 @@ func (edb *EtcdDB) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 
-	if *printf {
+	if edb.print {
 		logQuery(r)
 	}
 

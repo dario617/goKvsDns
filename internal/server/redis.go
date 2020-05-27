@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"fmt"
@@ -14,6 +14,7 @@ import (
 // RedisKVS : Implements DBDriver and holds the redis cluster client
 type RedisKVS struct {
 	client *redis.ClusterClient
+	print  bool
 }
 
 // MakeQuery : using a valid Redis client
@@ -295,7 +296,7 @@ func (r *RedisKVS) Handle(w dns.ResponseWriter, req *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(req)
 
-	if *printf {
+	if r.print {
 		logQuery(req)
 	}
 
