@@ -4,14 +4,18 @@
 //
 // Basic use pattern:
 //
-//   queryuploader -clusterIPs 192.168.0.2,192.168.0.3 -db cassandra -datasetFile ./file
+//   queryuploader --clusterIPs 192.168.0.2,192.168.0.3 --db cassandra --datasetFile ./file
 //
+// Or if the data is on different zonefiles you can read them by:
+//
+//   queryuploader --clusterIPs 192.168.0.2,192.168.0.3 --db cassandra --useZones true --datasetFolder ./zones
 //
 package main
 
 import (
 	"bufio"
 	"flag"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -19,12 +23,15 @@ import (
 	"syscall"
 
 	"github.com/dario617/goKvsDns/internal/server"
+	"github.com/dario617/goKvsDns/internal/utils"
 )
 
 var (
-	datasetFile = flag.String("datasetFile", "./data/dataset/dns-rr.txt", "File to read RR from")
-	db          = flag.String("db", "cassandra", "db to connect: cassandra|redis|pebble")
-	clusterIPs  = flag.String("clusterIPs", "192.168.0.240,192.168.0.241,192.168.0.242", "comma separated IP list")
+	datasetFile   = flag.String("datasetFile", "./data/dataset/dns-rr.txt", "File to read RR from")
+	useZones      = flag.Bool("useZones", false, "use Zones instead of a RR list file")
+	datasetFolder = flag.String("datasetFolder", "./data/zones", "Folder containing zones")
+	db            = flag.String("db", "cassandra", "db to connect: cassandra|redis|pebble")
+	clusterIPs    = flag.String("clusterIPs", "192.168.0.240,192.168.0.241,192.168.0.242", "comma separated IP list")
 )
 
 var values = map[string]int{
@@ -47,6 +54,25 @@ func readFile(ch chan string, name string) {
 	}
 }
 
+func readZones(ch chan string, name string) {
+	files, err := ioutil.ReadDir(name)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, file := range files {
+		records, err := utils.ReadAndParseZoneFile(file.Name(), "")
+
+		if err != nil {
+			log.Printf("Error parsing %s: %v", file.Name(), err)
+		}
+
+		for _, rr := range records {
+			ch <- rr.String()
+		}
+	}
+}
+
 func main() {
 
 	flag.Usage = func() {
@@ -56,7 +82,11 @@ func main() {
 
 	// Create channel and open file
 	lines := make(chan string)
-	go readFile(lines, *datasetFile)
+	if *useZones {
+		go readZones(lines, *datasetFolder)
+	} else {
+		go readFile(lines, *datasetFile)
+	}
 
 	// Connect to db
 	var driver server.DBDriver
