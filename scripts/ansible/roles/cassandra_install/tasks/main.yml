@@ -6,6 +6,17 @@
   apt:
     pkg: openjdk-8-jre
     state: present
+  when: ansible_distribution == 'Debian' or ansible_distribution == 'Ubuntu'
+  ignore_errors: yes
+
+- name: Install Open JDK 8
+  become: yes
+  become_method: sudo
+  yum:
+    pkg: java-1.8.0-openjdk.x86_64
+    state: present
+  when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+  ignore_errors: yes
 
 - name: Cassandra is Present locally
   find: 
