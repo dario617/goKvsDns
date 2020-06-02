@@ -355,11 +355,11 @@ func (edb *EtcdDB) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	}
 
 	if r.MsgHdr.Authoritative {
-		rcode := edb.MakeQuery(m)
-		m.MsgHdr.Rcode = rcode
+		m.MsgHdr.Rcode = 4 // Not implemented
 		w.WriteMsg(m)
 	} else {
-		m.MsgHdr.Rcode = 4 // Not implemented
+		rcode := edb.MakeQuery(m)
+		m.MsgHdr.Rcode = rcode
 		w.WriteMsg(m)
 	}
 }

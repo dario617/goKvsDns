@@ -301,11 +301,11 @@ func (r *RedisKVS) Handle(w dns.ResponseWriter, req *dns.Msg) {
 	}
 
 	if req.MsgHdr.Authoritative {
-		rcode := r.MakeQuery(m)
-		m.MsgHdr.Rcode = rcode
+		m.MsgHdr.Rcode = 4 // Not implemented
 		w.WriteMsg(m)
 	} else {
-		m.MsgHdr.Rcode = 4 // Not implemented
+		rcode := r.MakeQuery(m)
+		m.MsgHdr.Rcode = rcode
 		w.WriteMsg(m)
 	}
 }

@@ -9,7 +9,7 @@
   register: cassandra_folder
 
 - name: Start cassandra on background
-  shell: "{{cassandra_folder.files[0].path}}/bin/cassandra -f &"
+  shell: "nohup {{cassandra_folder.files[0].path}}/bin/cassandra -f &"
 
   
 - name: Copy cqlsh commands
@@ -25,4 +25,4 @@
   delay: 15
 
 - name: Copy Cassandra PID to file
-  shell: "ps -aux | grep -e 'cassandra' | grep -v 'grep' | cut -d ' ' -f 4 > cassandra_pid"
+  shell: "ps -aux | grep -e 'cassandra' | grep -v 'grep' | awk '{print $2}' > cassandra_pid"

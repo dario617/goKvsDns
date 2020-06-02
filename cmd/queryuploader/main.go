@@ -99,7 +99,7 @@ func main() {
 		driver = new(server.EtcdDB)
 	}
 
-	driver.ConnectDB(strings.Split(",", *clusterIPs))
+	driver.ConnectDB(strings.Split(*clusterIPs, ","))
 	log.Printf("DB %s connected for cluster %v\n", *db, *clusterIPs)
 	defer driver.Disconnect()
 

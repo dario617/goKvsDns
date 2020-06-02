@@ -25,12 +25,13 @@ func logQuery(m *dns.Msg) {
 
 func serve(net string, soreuseport bool, port int) {
 	server := &dns.Server{Addr: "[::]:" + strconv.Itoa(port), Net: net, TsigSecret: nil, ReusePort: soreuseport}
+	log.Printf("Starting a server on port %d...\n", port)
 	if err := server.ListenAndServe(); err != nil {
 		log.Fatalf("Failed to setup the "+net+" server: %s\n", err.Error())
 	}
-	log.Printf("Started a server on port %d...\n", port)
 }
 
+// Start server
 func Start(db, rawIps string, soreuseport, port int, verbose bool) DBDriver {
 
 	var ips []string = strings.Split(rawIps, ",")
@@ -52,7 +53,9 @@ func Start(db, rawIps string, soreuseport, port int, verbose bool) DBDriver {
 
 	driver.ConnectDB(ips)
 	log.Printf("DB %s connected for cluster %v\n", db, ips)
-	dns.HandleFunc(".", driver.Handle)
+	dns.HandleFunc(".", func(w dns.ResponseWriter, r *dns.Msg) {
+		driver.Handle(w, r)
+	})
 
 	if soreuseport > 0 {
 		for i := 0; i < soreuseport; i++ {
