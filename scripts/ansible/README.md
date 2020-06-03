@@ -1,11 +1,19 @@
-# UAbierta Ansible Setup
+# Ansible Setup
 
-To decrypt the secrets folder, you must create and place the password in the file "ansible-passwd"
+Extended ansible setup instructions
+
+## Relevant variables
+
+To connect you will need to modify the necessary variables on playbooks/group_vars/all
+* host_1
+* host_2
+* host_3
+* remote_user
+and on inventory/hosts
+* The server IPs
+* Your SSH connection user which is normally the same as remote_user; the variable is ansible_user
 
 ## Reserved Users
 | id    |    usage            |
 |-------|:-------------------:|
-| 62000 |  edx-mysql          |
-| 62001 | edx-mongodb         |
-| 62002 | edx-elasticsearch   |
-| 62003 |  edx-minio          |
+| 1502  |  etcd               |

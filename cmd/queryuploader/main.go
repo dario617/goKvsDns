@@ -21,6 +21,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/dario617/goKvsDns/internal/server"
 	"github.com/dario617/goKvsDns/internal/utils"
@@ -96,7 +97,9 @@ func main() {
 	case "redis":
 		driver = new(server.RedisKVS)
 	case "etcd":
-		driver = new(server.EtcdDB)
+		var d *server.EtcdDB = new(server.EtcdDB)
+		d.Timeout = 5 * time.Second
+		driver = d
 	}
 
 	driver.ConnectDB(strings.Split(*clusterIPs, ","))

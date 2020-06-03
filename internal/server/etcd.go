@@ -15,8 +15,8 @@ import (
 // EtcdDB : Implements DBDriver and holds the etcd client
 type EtcdDB struct {
 	client  *clientv3.Client
-	timeout time.Duration
-	print   bool
+	Timeout time.Duration
+	Print   bool
 }
 
 // Disconnect : Closes the Ectd client

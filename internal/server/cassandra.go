@@ -12,7 +12,7 @@ import (
 // CassandraDB : Implements DBDriver and holds the cassandra session
 type CassandraDB struct {
 	session *gocql.Session
-	print   bool
+	Print   bool
 }
 
 // MakeQuery : using a valid session stored on CassandraDB makes a get

@@ -21,18 +21,23 @@
     tasks:
       - name: Redis is Present locally
         find: 
-          paths: /home/andhael/
+          paths: "/home/{{remote_user}}/"
           file_type: directory
           use_regex: yes
           patterns: '.*redis-5*'
         register: redis_folder
+        
+      - name: Install pexpect using pip
+        pip:
+          name: pexpect
+          state: latest
+        when: ansible_system == 'Linux'
+
       - name: Start cluster
-        expect: 
-          args:
+        expect:
           command: "./redis-cli --cluster  create {{redis_servers | join(' ')}} --cluster-replicas 1"
           chdir: "{{redis_folder.files[0].path}}/src"
           responses:
-            Question:
-              - "yes" 
+            "Can I set the above configuration?": "yes"
         when: redis_folder.matched > 0
 # Check state on a local cluster machine using redis-cli --cluster check [host:port]

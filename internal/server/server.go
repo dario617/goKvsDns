@@ -4,6 +4,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/miekg/dns"
 )
@@ -39,15 +40,16 @@ func Start(db, rawIps string, soreuseport, port int, verbose bool) DBDriver {
 	switch db {
 	case "cassandra":
 		var d *CassandraDB = new(CassandraDB)
-		d.print = verbose
+		d.Print = verbose
 		driver = d
 	case "redis":
 		var d *RedisKVS = new(RedisKVS)
-		d.print = verbose
+		d.Print = verbose
 		driver = new(RedisKVS)
 	case "etcd":
 		var d *EtcdDB = new(EtcdDB)
-		d.print = verbose
+		d.Print = verbose
+		d.Timeout = 5 * time.Second
 		driver = new(EtcdDB)
 	}
 

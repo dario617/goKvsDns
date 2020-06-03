@@ -14,7 +14,7 @@ import (
 // RedisKVS : Implements DBDriver and holds the redis cluster client
 type RedisKVS struct {
 	client *redis.ClusterClient
-	print  bool
+	Print  bool
 }
 
 // MakeQuery : using a valid Redis client
