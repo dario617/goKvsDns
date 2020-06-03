@@ -36,8 +36,8 @@ func (edb *EtcdDB) ConnectDB(ips []string) {
 	edb.client = cli
 }
 
-// RecoverKey  from Etcd cluster using a timeout
-func (edb *EtcdDB) RecoverKey(key string) (string, error) {
+// recoverKey  from Etcd cluster using a timeout
+func (edb *EtcdDB) recoverKey(key string) (string, error) {
 	cli := edb.client
 	requestTimeout := edb.Timeout
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
@@ -48,38 +48,101 @@ func (edb *EtcdDB) RecoverKey(key string) (string, error) {
 		return "", err
 	}
 
+	if len(resp.Kvs) == 0 {
+		return "", nil
+	}
 	return string(resp.Kvs[0].Value), nil
 }
 
-// PutValueOnSet checks if value is present on set (a line). If not then it adds it
-func (edb *EtcdDB) PutValueOnSet(key, value string) error {
+// putValueOnSet checks if value is present on set (a line). If not then it adds it
+// A value is described the value in a pair TTL Value
+func (edb *EtcdDB) putValueOnSet(key, value *string) error {
 	// Recover full value
-	resp, err := edb.RecoverKey(key)
+	resp, err := edb.recoverKey(*key)
 	if err != nil {
 		return err
 	}
 
 	records := strings.Split(resp, ",")
+	// Value ignoring TTL
+	val := strings.Split(*value, " ")[1]
 	// Check that we are not repeating our selves
 	var repeated bool = false
 	for i := range records {
-		if records[i] == value {
+		recordValue := strings.Split(records[i], " ")[1]
+		if recordValue == val {
 			repeated = true
-		}
-	}
-	// Create new answer set
-	if !repeated {
-		newValue := resp + "," + value
-		cli := edb.client
-		requestTimeout := edb.Timeout
-		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
-		_, err = cli.Put(ctx, key, newValue)
-		cancel()
-		if err != nil {
-			return err
+			// If repeated replace the value at position i
+			records[i] = *value
+			break
 		}
 	}
 
+	var newValue string = resp
+	// Create new answer set
+	if !repeated {
+		if newValue == "" {
+			newValue = *value
+		} else {
+			newValue = resp + "," + *value
+		}
+	} else {
+		newValue = strings.Join(records, ",")
+	}
+	cli := edb.client
+	requestTimeout := edb.Timeout
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	_, err = cli.Put(ctx, *key, newValue)
+	cancel()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// putTXTOnList by reading the value: [TTL, Value] and appending to the
+// string RR list if the TTL is the same
+func (edb *EtcdDB) putTXTOnList(key *string, value []string) error {
+	// Recover full value
+	resp, err := edb.recoverKey(*key)
+	if err != nil {
+		return err
+	}
+
+	var newValue string = resp
+	records := strings.Split(resp, ",")
+	// Check that TTL is the same
+	if records[0] == value[0] {
+		// Check that we are not repeating our selves
+		var repeated bool = false
+		for i := range records {
+			if i == 0 {
+				continue
+			}
+			if records[i] == value[1] {
+				repeated = true
+				// If repeated replace the value at position i
+				records[i] = value[1]
+				break
+			}
+		}
+		if !repeated {
+			newValue = resp + "," + value[1]
+		} else {
+			newValue = strings.Join(records, ",")
+		}
+		// Take different TTLs as a complete update of the RR
+	} else {
+		newValue = strings.Join(value, ",")
+	}
+	cli := edb.client
+	requestTimeout := edb.Timeout
+	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
+	_, err = cli.Put(ctx, *key, newValue)
+	cancel()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -94,7 +157,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 
 	switch dnsq.Qtype {
 	case dns.TypeA:
-		resp, err := edb.RecoverKey(dnsq.Name + ":A")
+		resp, err := edb.recoverKey(dnsq.Name + ":A")
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
@@ -110,7 +173,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			m.Answer = append(m.Answer, rr)
 		}
 	case dns.TypeNS:
-		resp, err := edb.RecoverKey(dnsq.Name + ":NS")
+		resp, err := edb.recoverKey(dnsq.Name + ":NS")
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
@@ -127,7 +190,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			m.Answer = append(m.Answer, rr)
 		}
 	case dns.TypeCNAME:
-		resp, err := edb.RecoverKey(dnsq.Name + ":CNAME")
+		resp, err := edb.recoverKey(dnsq.Name + ":CNAME")
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
@@ -144,7 +207,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			m.Answer = append(m.Answer, rr)
 		}
 	case dns.TypeSOA:
-		resp, err := edb.RecoverKey(dnsq.Name + ":SOA")
+		resp, err := edb.recoverKey(dnsq.Name + ":SOA")
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
@@ -168,7 +231,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			Minttl:  uint32(mintll)}
 		m.Answer = append(m.Answer, rr)
 	case dns.TypePTR:
-		resp, err := edb.RecoverKey(dnsq.Name + ":PTR")
+		resp, err := edb.recoverKey(dnsq.Name + ":PTR")
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
@@ -185,7 +248,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			m.Answer = append(m.Answer, rr)
 		}
 	case dns.TypeHINFO:
-		resp, err := edb.RecoverKey(dnsq.Name + ":HINFO")
+		resp, err := edb.recoverKey(dnsq.Name + ":HINFO")
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
@@ -203,7 +266,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			m.Answer = append(m.Answer, rr)
 		}
 	case dns.TypeMX:
-		resp, err := edb.RecoverKey(dnsq.Name + ":MX")
+		resp, err := edb.recoverKey(dnsq.Name + ":MX")
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
@@ -222,7 +285,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			m.Answer = append(m.Answer, rr)
 		}
 	case dns.TypeTXT:
-		resp, err := edb.RecoverKey(dnsq.Name + ":SOA")
+		resp, err := edb.recoverKey(dnsq.Name + ":TXT")
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
@@ -254,7 +317,7 @@ func (edb *EtcdDB) UploadRR(line string) error {
 		var key string = tk[0] + ":A"
 		var newRR string = tk[1] + " " + tk[4]
 
-		err := edb.PutValueOnSet(key, newRR)
+		err := edb.putValueOnSet(&key, &newRR)
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return err
@@ -263,7 +326,7 @@ func (edb *EtcdDB) UploadRR(line string) error {
 		var key string = tk[0] + ":NS"
 		var newRR string = tk[1] + " " + tk[4]
 
-		err := edb.PutValueOnSet(key, newRR)
+		err := edb.putValueOnSet(&key, &newRR)
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return err
@@ -272,7 +335,7 @@ func (edb *EtcdDB) UploadRR(line string) error {
 		var key string = tk[0] + ":CNAME"
 		var newRR string = tk[1] + " " + tk[4]
 
-		err := edb.PutValueOnSet(key, newRR)
+		err := edb.putValueOnSet(&key, &newRR)
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return err
@@ -311,7 +374,7 @@ func (edb *EtcdDB) UploadRR(line string) error {
 		var key string = tk[0] + ":HINFO"
 		var newRR string = tk[1] + " " + tk[4]
 
-		err := edb.PutValueOnSet(key, newRR)
+		err := edb.putValueOnSet(&key, &newRR)
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return err
@@ -320,16 +383,16 @@ func (edb *EtcdDB) UploadRR(line string) error {
 		var key string = tk[0] + ":HINFO"
 		var newRR string = tk[1] + " " + tk[4]
 
-		err := edb.PutValueOnSet(key, newRR)
+		err := edb.putValueOnSet(&key, &newRR)
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return err
 		}
 	case "TXT":
 		var key string = tk[0] + ":TXT"
-		var newRR string = tk[1] + " " + strings.ReplaceAll(tk[4], "\"", "")
+		var newRR []string = []string{tk[1], strings.ReplaceAll(tk[4], "\"", "")}
 
-		err := edb.PutValueOnSet(key, newRR)
+		err := edb.putTXTOnList(&key, newRR)
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return err
