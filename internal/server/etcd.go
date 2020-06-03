@@ -39,7 +39,7 @@ func (edb *EtcdDB) ConnectDB(ips []string) {
 // RecoverKey  from Etcd cluster using a timeout
 func (edb *EtcdDB) RecoverKey(key string) (string, error) {
 	cli := edb.client
-	requestTimeout := edb.timeout
+	requestTimeout := edb.Timeout
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	resp, err := cli.Get(ctx, key)
 	cancel()
@@ -71,7 +71,7 @@ func (edb *EtcdDB) PutValueOnSet(key, value string) error {
 	if !repeated {
 		newValue := resp + "," + value
 		cli := edb.client
-		requestTimeout := edb.timeout
+		requestTimeout := edb.Timeout
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		_, err = cli.Put(ctx, key, newValue)
 		cancel()
@@ -281,7 +281,7 @@ func (edb *EtcdDB) UploadRR(line string) error {
 		var key string = tk[0] + ":SOA"
 		newValue := tk[1] + " " + tk[4]
 		cli := edb.client
-		requestTimeout := edb.timeout
+		requestTimeout := edb.Timeout
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		_, err := cli.Put(ctx, key, newValue)
 		cancel()
@@ -299,7 +299,7 @@ func (edb *EtcdDB) UploadRR(line string) error {
 		var key string = domain + ":PTR"
 		newValue := tk[1] + " " + tk[4]
 		cli := edb.client
-		requestTimeout := edb.timeout
+		requestTimeout := edb.Timeout
 		ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 		_, err := cli.Put(ctx, key, newValue)
 		cancel()
@@ -350,7 +350,7 @@ func (edb *EtcdDB) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 
-	if edb.print {
+	if edb.Print {
 		logQuery(r)
 	}
 

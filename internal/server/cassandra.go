@@ -354,7 +354,7 @@ func (c *CassandraDB) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 
-	if c.print {
+	if c.Print {
 		logQuery(r)
 	}
 

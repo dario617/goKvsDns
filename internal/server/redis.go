@@ -296,7 +296,7 @@ func (r *RedisKVS) Handle(w dns.ResponseWriter, req *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(req)
 
-	if r.print {
+	if r.Print {
 		logQuery(req)
 	}
 
