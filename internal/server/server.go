@@ -45,12 +45,12 @@ func Start(db, rawIps string, soreuseport, port int, verbose bool) DBDriver {
 	case "redis":
 		var d *RedisKVS = new(RedisKVS)
 		d.Print = verbose
-		driver = new(RedisKVS)
+		driver = d
 	case "etcd":
 		var d *EtcdDB = new(EtcdDB)
 		d.Print = verbose
 		d.Timeout = 5 * time.Second
-		driver = new(EtcdDB)
+		driver = d
 	}
 
 	driver.ConnectDB(ips)

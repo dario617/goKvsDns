@@ -10,6 +10,7 @@ import (
 
 	"github.com/miekg/dns"
 	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/etcdserver/api/v3rpc/rpctypes"
 )
 
 // EtcdDB : Implements DBDriver and holds the etcd client
@@ -42,9 +43,19 @@ func (edb *EtcdDB) recoverKey(key string) (string, error) {
 	requestTimeout := edb.Timeout
 	ctx, cancel := context.WithTimeout(context.Background(), requestTimeout)
 	resp, err := cli.Get(ctx, key)
-	cancel()
+	defer cancel()
 
 	if err != nil {
+		switch err {
+		case context.Canceled:
+			log.Printf("ctx is canceled by another routine: %v\n", err)
+		case context.DeadlineExceeded:
+			log.Printf("ctx is attached with a deadline is exceeded: %v\n", err)
+		case rpctypes.ErrEmptyKey:
+			log.Printf("client-side error: %v\n", err)
+		default:
+			log.Printf("bad cluster endpoints, which are not etcd servers: %v\n", err)
+		}
 		return "", err
 	}
 
@@ -63,18 +74,20 @@ func (edb *EtcdDB) putValueOnSet(key, value *string) error {
 		return err
 	}
 
-	records := strings.Split(resp, ",")
-	// Value ignoring TTL
-	val := strings.Split(*value, " ")[1]
-	// Check that we are not repeating our selves
 	var repeated bool = false
-	for i := range records {
-		recordValue := strings.Split(records[i], " ")[1]
-		if recordValue == val {
-			repeated = true
-			// If repeated replace the value at position i
-			records[i] = *value
-			break
+	records := strings.Split(resp, ",")
+	if resp != "" {
+		// Value ignoring TTL
+		val := strings.Split(*value, " ")[1]
+		// Check that we are not repeating our selves
+		for i := range records {
+			recordValue := strings.Split(records[i], " ")[1]
+			if recordValue == val {
+				repeated = true
+				// If repeated replace the value at position i
+				records[i] = *value
+				break
+			}
 		}
 	}
 
