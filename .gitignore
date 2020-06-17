@@ -16,6 +16,7 @@
 
 scripts/ansible/roles/examples
 internal/data/raw/
+internal/data/zones/
 internal/data/sorted/
 internal/data/dataset
 

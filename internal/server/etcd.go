@@ -175,6 +175,10 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
 		}
+		if resp == "" {
+			// No value found
+			return 0 // No error
+		}
 		records := strings.Split(resp, ",")
 		for i := range records {
 			values := strings.Split(records[i], " ")
@@ -190,6 +194,10 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
+		}
+		if resp == "" {
+			// No value found
+			return 0 // No error
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -208,6 +216,10 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
 		}
+		if resp == "" {
+			// No value found
+			return 0 // No error
+		}
 		records := strings.Split(resp, ",")
 		for i := range records {
 			// TTL DOMAIN_NAME
@@ -224,6 +236,10 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
+		}
+		if resp == "" {
+			// No value found
+			return 0 // No error
 		}
 		values := strings.Split(resp, " ")
 		// ttl mname rname serial refresh retry expire minimum
@@ -249,6 +265,10 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
 		}
+		if resp == "" {
+			// No value found
+			return 0 // No error
+		}
 		records := strings.Split(resp, ",")
 		for i := range records {
 			// TTL PTRDNAME
@@ -265,6 +285,10 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
+		}
+		if resp == "" {
+			// No value found
+			return 0 // No error
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -283,6 +307,10 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		if err != nil {
 			log.Printf("Error on Etcd %v", err)
 			return 2 // Server Problem
+		}
+		if resp == "" {
+			// No value found
+			return 0 // No error
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -304,6 +332,10 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 			return 2 // Server Problem
 		}
 		// TTL val1 val2 val3 ...
+		if resp == "" {
+			// No value found
+			return 0 // No error
+		}
 		records := strings.Split(resp, ",")
 		ttl, _ := strconv.Atoi(records[0])
 		rr := &dns.TXT{
