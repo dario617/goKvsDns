@@ -25,9 +25,21 @@ clean: $(STOP_DB)
 		@rm -f $(BINARY_NAME)
 
 run: $(RUN_DB)
-		$(GOBUILD) -o $(BINARY_NAME) -v ./...
+		$(GOBUILD) -o $(BINARY_NAME) -v
 		./$(BINARY_NAME) --clusterIPs $(CLUSTER_IPS) --print --soreuseport $(CPU_NUMBER) --cpu $(CPU_NUMBER)
 
+run_standalone:
+		$(GOBUILD) -o $(BINARY_NAME) -v
+		./$(BINARY_NAME) --clusterIPs $(CLUSTER_IPS) --print --soreuseport $(CPU_NUMBER) --cpu $(CPU_NUMBER)
+
+build_cmd: build_requester build_uploader
+
+build_requester:
+		@cd cmd/dnsrequester && $(GOBUILD) -v
+
+build_uploader:
+		@cd cmd/queryuploader && $(GOBUILD) -v
+		
 # Key value store targets using ansible
 run_cassandra:
 		@cd $(ANSIBLE_DIR) && ansible-playbook --ask-become-pass playbooks/cassandra_up.yml
