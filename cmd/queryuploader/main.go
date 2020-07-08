@@ -33,6 +33,7 @@ var (
 	datasetFolder = flag.String("datasetFolder", "./data/zones", "Folder containing zones")
 	db            = flag.String("db", "cassandra", "db to connect: cassandra|redis|etcd")
 	clusterIPs    = flag.String("clusterIPs", "192.168.0.240,192.168.0.241,192.168.0.242", "comma separated IP list")
+	routines      = flag.Int("routines", 1, "number of subroutines")
 )
 
 var values = map[string]int{
@@ -50,8 +51,14 @@ func readFile(ch chan string, name string) {
 	scanner := bufio.NewScanner(file)
 	scanner.Split(bufio.ScanLines)
 
+	var count uint64 = 0
 	for scanner.Scan() {
 		ch <- scanner.Text()
+
+		count++
+		if count%1000 == 0 {
+			log.Println("Did ", count)
+		}
 	}
 }
 
@@ -61,6 +68,7 @@ func readZones(ch chan string, name string) {
 		log.Fatal(err)
 	}
 
+	var count uint64 = 0
 	for _, file := range files {
 		records, err := utils.ReadAndParseZoneFile(file.Name(), "")
 
@@ -70,6 +78,10 @@ func readZones(ch chan string, name string) {
 
 		for _, rr := range records {
 			ch <- rr.String()
+			count++
+			if count%1000 == 0 {
+				log.Println("Did ", count)
+			}
 		}
 	}
 }
@@ -106,19 +118,17 @@ func main() {
 	log.Printf("DB %s connected for cluster %v\n", *db, *clusterIPs)
 	defer driver.Disconnect()
 
-	go func() {
-		var count uint64 = 0
-		for l := range lines {
-			err := driver.UploadRR(l)
-			if err != nil {
-				log.Printf("Error uploading %s: %v", l, err)
+	for i := 0; i < *routines; i++ {
+		go func() {
+			log.Println("Started goroutine")
+			for l := range lines {
+				err := driver.UploadRR(l)
+				if err != nil {
+					log.Printf("Error uploading %s: %v", l, err)
+				}
 			}
-			count++
-			if count%1000 == 0 {
-				log.Println("Did ", count)
-			}
-		}
-	}()
+		}()
+	}
 
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)

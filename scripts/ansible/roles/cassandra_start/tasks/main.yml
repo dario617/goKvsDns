@@ -9,7 +9,7 @@
   register: cassandra_folder
 
 - name: Start cassandra on background
-  shell: "nohup {{cassandra_folder.files[0].path}}/bin/cassandra -f -p cassandra_pid &"
+  shell: "{{cassandra_folder.files[0].path}}/bin/cassandra -p cassandra_pid"
 
   
 - name: Copy cqlsh commands
