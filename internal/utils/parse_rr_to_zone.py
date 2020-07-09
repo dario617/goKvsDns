@@ -41,18 +41,25 @@ def createTree(root_dict, fqd, rr, value, ttl):
   except Exception as e:
     logger.error("Error %s at domain %s",e, fqd)
 
+
 def exportDomainsToFile(root_dict, single_file, default_ttl="1d", soa="default"):
+  """
+  Write zones to one or multiple file zones and create a lists of available domains
+  """
   rrs = ["A", "TXT", "SOA", "HINFO", "MX", "CNAME", "NS"]
-  soa_v = "@  IN  SOA   ns.example.com. username.example.com. ( 2000073131 1d 2h 4w 1h )"
+  soa_v = "ns.example.com. username.example.com. ( 2000073131 1d 2h 4w 1h )"
   if soa != "default":
     soa_v = soa
   c_zones = 0
   c_soas = 0
+
+  zone_list = []
+
   for tld in root_dict.keys():
     domain_dict = root_dict[tld]
     for domain in domain_dict.keys():
       sub_domains = domain_dict[domain]
-      file_name = "master." + domain + "." + tld
+      file_name = domain + "." + tld + ".zone"
       mode = "w"
       if single_file != False:
         file_name = single_file
@@ -80,6 +87,7 @@ def exportDomainsToFile(root_dict, single_file, default_ttl="1d", soa="default")
                 for r_value in record_values:
                    values.append(current_sub_dom+domain + "." + tld + ".  IN  "+record+"  "+r_value+"\n")
           else:
+            # Abort
             print("wait what")
             print(subdomain, domain, tld)
             exit(0)
@@ -94,7 +102,13 @@ def exportDomainsToFile(root_dict, single_file, default_ttl="1d", soa="default")
           file.write(rr)
         if single_file != False:
           file.write("\n")
+      zone_list.append(domain+"."+tld)
       c_zones = c_zones + 1
+  
+  with open("parsed_zonelist", "w") as f:
+    for line in zone_list:
+      f.write(line+"\n")
+
   return c_zones, c_soas
 
 if __name__ == "__main__":

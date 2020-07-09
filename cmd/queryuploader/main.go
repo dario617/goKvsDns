@@ -70,10 +70,10 @@ func readZones(ch chan string, name string) {
 
 	var count uint64 = 0
 	for _, file := range files {
-		records, err := utils.ReadAndParseZoneFile(file.Name(), "")
+		records, err := utils.ReadAndParseZoneFile(name+"/"+file.Name(), "")
 
 		if err != nil {
-			log.Printf("Error parsing %s: %v", file.Name(), err)
+			log.Printf("Error parsing %s: %v", name+"/"+file.Name(), err)
 		}
 
 		for _, rr := range records {
