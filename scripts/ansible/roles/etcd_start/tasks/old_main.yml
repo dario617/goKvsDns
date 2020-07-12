@@ -2,7 +2,7 @@
 
 - name: Etcd is Present locally
   find:
-    paths: "/home/{{remote_user}}/"
+    paths: "/home/{{ansible_user}}/"
     file_type: directory
     use_regex: yes
     patterns: 'etcd-v.*$'

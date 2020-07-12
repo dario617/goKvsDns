@@ -21,7 +21,7 @@
     tasks:
       - name: Redis is Present locally
         find: 
-          paths: "/home/{{remote_user}}/"
+          paths: "/home/{{ansible_user}}/{{working_directory}}/"
           file_type: directory
           use_regex: yes
           patterns: '.*redis-5*'

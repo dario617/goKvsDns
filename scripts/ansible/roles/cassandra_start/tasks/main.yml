@@ -2,23 +2,22 @@
 
 - name: Register folder
   find: 
-    paths: "/home/{{remote_user}}/"
+    paths: "/home/{{ansible_user}}/{{working_directory}}/"
     file_type: directory
     use_regex: yes
     patterns: '.*apache-cassandra-3.0.*'
   register: cassandra_folder
 
 - name: Start cassandra on background
-  shell: "{{cassandra_folder.files[0].path}}/bin/cassandra -p cassandra_pid"
-
+  shell: "{{cassandra_folder.files[0].path}}/bin/cassandra -p ~/{{working_directory}}/cassandra_pid"
   
 - name: Copy cqlsh commands
   copy:
     src: files/create_db.cql
-    dest: ~/create_db.cql
+    dest: "~/{{working_directory}}/create_db.cql"
     
 - name: Write DB if not initialized
-  shell: "{{cassandra_folder.files[0].path}}/bin/cqlsh -f ~/create_db.cql"
+  shell: "{{cassandra_folder.files[0].path}}/bin/cqlsh -f ~/{{working_directory}}/create_db.cql"
   register: result
   until: result.rc == 0
   retries: 10

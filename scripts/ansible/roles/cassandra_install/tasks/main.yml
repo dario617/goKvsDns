@@ -20,7 +20,7 @@
 
 - name: Cassandra is Present locally
   find: 
-    paths: "/home/{{remote_user}}/"
+    paths: "/home/{{ansible_user}}/{{working_directory}}/"
     file_type: directory
     use_regex: yes
     patterns: '.*apache-cassandra-3.0.*'
@@ -31,27 +31,27 @@
 - name: Download binaries
   get_url:
     url: https://downloads.apache.org/cassandra/3.0.20/apache-cassandra-3.0.20-bin.tar.gz
-    dest: ~/apache-cassandra-3.0.20-bin.tar.gz
+    dest: "~/{{working_directory}}/apache-cassandra-3.0.20-bin.tar.gz"
   when: cassandra_folder.matched == 0
   register: downloaded_targz
 
 - name: Extract files
   unarchive:
-    src: ~/apache-cassandra-3.0.20-bin.tar.gz
-    dest: ~/
+    src: "~/{{working_directory}}/apache-cassandra-3.0.20-bin.tar.gz"
+    dest: "~/{{working_directory}}/"
     remote_src: yes
   when: downloaded_targz.changed
   register: extracted_targz
 
 
 - name: Remove files
-  command: rm ~/apache-cassandra-3.0.20-bin.tar.gz
+  command: rm "~/{{working_directory}}/apache-cassandra-3.0.20-bin.tar.gz"
   when: extracted_targz.changed and cassandra_folder.matched == 0
 
 
 - name: Register folder
   find: 
-    paths: "/home/{{remote_user}}/"
+    paths: "/home/{{ansible_user}}/{{working_directory}}/"
     file_type: directory
     use_regex: yes
     patterns: '.*apache-cassandra-3.0.*'

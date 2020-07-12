@@ -2,7 +2,7 @@
 
 - name: Redis is Present locally
   find: 
-    paths: "/home/{{remote_user}}/"
+    paths: "/home/{{ansible_user}}/{{working_directory}}/"
     file_type: directory
     use_regex: yes
     patterns: '.*redis-5*'
@@ -13,25 +13,25 @@
 - name: Download binaries
   get_url:
     url: http://download.redis.io/releases/redis-5.0.8.tar.gz
-    dest: ~/redis-5.0.8.tar.gz
+    dest: "~/{{working_directory}}/redis-5.0.8.tar.gz"
   when: redis_folder.matched == 0
   register: downloaded_targz
 
 - name: Extract files
   unarchive:
-    src: ~/redis-5.0.8.tar.gz
+    src: "~/{{working_directory}}/redis-5.0.8.tar.gz"
     dest: ~/
     remote_src: yes
   when: downloaded_targz.changed
   register: extracted_targz
 
 - name: Remove files
-  command: rm ~/redis-5.0.8.tar.gz
+  command: rm "~/{{working_directory}}/redis-5.0.8.tar.gz"
   when: extracted_targz.changed and redis_folder.matched == 0
 
 - name: Redis is Present locally after extraction
   find: 
-    paths: "/home/{{remote_user}}/"
+    paths: "/home/{{ansible_user}}/{{working_directory}}/"
     file_type: directory
     use_regex: yes
     patterns: '.*redis-5*'

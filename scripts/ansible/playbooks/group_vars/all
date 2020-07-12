@@ -1,6 +1,6 @@
 ---
 
-remote_user: andhael
+working_directory: kvsBackend
 
 host_1: 192.168.0.240
 host_2: 192.168.0.241

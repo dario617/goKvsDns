@@ -5,4 +5,4 @@
       - servers
     tasks:
       - name: Kill using pid on file
-        shell: "kill $(cat cassandra_pid)"
+        shell: "kill $(cat ~/{{working_directory}}/cassandra_pid)"
