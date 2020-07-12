@@ -50,16 +50,16 @@ build_uploader:
 		
 # Key value store targets using ansible
 run_cassandra:
-		@cd $(ANSIBLE_DIR) && ansible-playbook --ask-become-pass playbooks/cassandra_up.yml
+		@cd $(ANSIBLE_DIR) && ansible-playbook -K playbooks/cassandra_up.yml
 stop_cassandra:
-		@cd $(ANSIBLE_DIR) && ansible-playbook --ask-become-pass playbooks/cassandra_down.yml
+		@cd $(ANSIBLE_DIR) && ansible-playbook -K playbooks/cassandra_down.yml
 
 run_redis:
-		@cd $(ANSIBLE_DIR) && ansible-playbook --ask-become-pass playbooks/redis_up.yml
+		@cd $(ANSIBLE_DIR) && ansible-playbook -K playbooks/redis_up.yml
 stop_redis:
-		@cd $(ANSIBLE_DIR) && ansible-playbook --ask-become-pass playbooks/redis_down.yml
+		@cd $(ANSIBLE_DIR) && ansible-playbook -K playbooks/redis_down.yml
 
 run_etcd:
-		@cd $(ANSIBLE_DIR) && ansible-playbook --ask-become-pass playbooks/etcd_up.yml
+		@cd $(ANSIBLE_DIR) && ansible-playbook -K playbooks/etcd_up.yml
 stop_etcd:
-		@cd $(ANSIBLE_DIR) && ansible-playbook --ask-become-pass playbooks/etcd_down.yml
+		@cd $(ANSIBLE_DIR) && ansible-playbook -K playbooks/etcd_down.yml
