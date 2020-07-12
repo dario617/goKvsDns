@@ -36,6 +36,7 @@ import (
 	"os/signal"
 	"runtime"
 	"runtime/pprof"
+	"strconv"
 	"syscall"
 
 	"github.com/dario617/goKvsDns/internal/server"
@@ -70,6 +71,17 @@ func main() {
 	}
 
 	var driver = server.Start(*db, *clusterIPs, *soreuseport, *port, *printf)
+	pid := os.Getpid()
+	f, err := os.OpenFile("kvsDns.pid", os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Println("Couldn't open the file KvsDns.pid")
+	}
+	_, err = f.WriteString(strconv.Itoa(pid))
+	if err != nil {
+		log.Println("Couldn't write process pid to file KvsDns.pid")
+	}
+	defer f.Close()
+
 	defer driver.Disconnect()
 
 	log.Println("Waiting for requests or SIGINT")

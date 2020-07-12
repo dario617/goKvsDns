@@ -8,7 +8,15 @@ BINARY_NAME=KvsDns
 # Database config
 # Select from cassandra,redis,etcd
 DB=cassandra
+ifeq ($(DB),cassandra)
 CLUSTER_IPS="192.168.0.240,192.168.0.241,192.168.0.242"
+else
+ifeq ($(DB),redis)
+CLUSTER_IPS="192.168.0.240:7001,192.168.0.240:7002,192.168.0.241:7003,192.168.0.241:7004,192.168.0.242:7005,192.168.0.242:7006"
+else
+CLUSTER_IPS="192.168.0.240:2379,192.168.0.241:2379,192.168.0.242:2379"
+endif
+endif
 CPU_NUMBER=4
 RUN_DB=run_$(DB)
 STOP_DB=stop_$(DB)

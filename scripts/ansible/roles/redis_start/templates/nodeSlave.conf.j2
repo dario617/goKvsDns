@@ -2,6 +2,7 @@ port {{redis_slave_port}}
 cluster-enabled yes
 cluster-config-file cluster-node-2.conf
 cluster-node-timeout {{cluster_node_timeout}}
+aof-use-rdb-preamble yes
 appendonly yes
 appendfilename "node-2.aof"
 dbfilename dump-2.rdb

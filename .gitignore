@@ -23,5 +23,6 @@ internal/data/dataset
 # Compiled
 goKvsDns
 KvsDns
+kvsDns.pid
 dnsrequester
 queryuploader
