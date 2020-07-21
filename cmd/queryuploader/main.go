@@ -4,11 +4,14 @@
 //
 // Basic use pattern:
 //
-//   queryuploader --clusterIPs 192.168.0.2,192.168.0.3 --db cassandra --datasetFile ./file
+//   queryuploader --clusterIPs 192.168.0.2,192.168.0.3 --db cassandra --df ./file
 //
 // Or if the data is on different zonefiles you can read them by:
 //
-//   queryuploader --clusterIPs 192.168.0.2,192.168.0.3 --db cassandra --useZones true --datasetFolder ./zones
+//   queryuploader --clusterIPs 192.168.0.2,192.168.0.3 --db cassandra --useZones --dd ./zones
+//
+// NB: add the necessary ports for each redis and etcd server.
+// Consider this operation very taxing for a large dataset
 //
 package main
 
@@ -20,6 +23,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -28,19 +32,22 @@ import (
 )
 
 var (
-	datasetFile   = flag.String("datasetFile", "./data/dataset/dns-rr.txt", "File to read RR from")
+	datasetFile   = flag.String("df", "./data/dataset/dns-rr.txt", "File to read RR from")
 	useZones      = flag.Bool("useZones", false, "use Zones instead of a RR list file")
-	datasetFolder = flag.String("datasetFolder", "./data/zones", "Folder containing zones")
+	datasetFolder = flag.String("dd", "./data/zones", "Directory containing zones")
 	db            = flag.String("db", "cassandra", "db to connect: cassandra|redis|etcd")
 	clusterIPs    = flag.String("clusterIPs", "192.168.0.240,192.168.0.241,192.168.0.242", "comma separated IP list")
 	routines      = flag.Int("routines", 1, "number of subroutines")
+	verbose       = flag.Bool("v", false, "Print to stdout progress and logs")
 )
 
 var values = map[string]int{
 	"IN": 1,
 }
 
-func readFile(ch chan string, name string) {
+func readFile(ch chan string, name string, wg *sync.WaitGroup) {
+	defer os.Exit(0)
+
 	file, err := os.Open(name)
 	if err != nil {
 		log.Fatal(err)
@@ -56,13 +63,19 @@ func readFile(ch chan string, name string) {
 		ch <- scanner.Text()
 
 		count++
-		if count%1000 == 0 {
+		if count%1000 == 0 && *verbose {
 			log.Println("Did ", count)
 		}
 	}
+
+	wg.Done()
+	// When upload is complete exit
+	wg.Wait()
 }
 
-func readZones(ch chan string, name string) {
+func readZones(ch chan string, name string, wg *sync.WaitGroup) {
+	defer os.Exit(0)
+
 	files, err := ioutil.ReadDir(name)
 	if err != nil {
 		log.Fatal(err)
@@ -79,9 +92,25 @@ func readZones(ch chan string, name string) {
 		for _, rr := range records {
 			ch <- rr.String()
 			count++
-			if count%1000 == 0 {
+			if count%1000 == 0 && *verbose {
 				log.Println("Did ", count)
 			}
+		}
+	}
+
+	wg.Done()
+	// When upload is complete exit
+	wg.Wait()
+}
+
+func uploadWorker(driver server.DBDriver, lines chan string, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	log.Println("Started goroutine")
+	for l := range lines {
+		err := driver.UploadRR(l)
+		if err != nil && *verbose {
+			log.Printf("Error uploading %s: %v", l, err)
 		}
 	}
 }
@@ -93,23 +122,34 @@ func main() {
 	}
 	flag.Parse()
 
+	var wg sync.WaitGroup
+
 	// Create channel and open file
+	// The following routines will call for a halt when they are done
+	// or die unexpectedly on a bad line
 	lines := make(chan string)
 	if *useZones {
-		go readZones(lines, *datasetFolder)
+		wg.Add(1)
+		go readZones(lines, *datasetFolder, &wg)
 	} else {
-		go readFile(lines, *datasetFile)
+		wg.Add(1)
+		go readFile(lines, *datasetFile, &wg)
 	}
 
 	// Connect to db
 	var driver server.DBDriver
 	switch *db {
 	case "cassandra":
-		driver = new(server.CassandraDB)
+		var d *server.CassandraDB = new(server.CassandraDB)
+		d.Print = *verbose
+		driver = d
 	case "redis":
-		driver = new(server.RedisKVS)
+		var d *server.RedisKVS = new(server.RedisKVS)
+		d.Print = *verbose
+		driver = d
 	case "etcd":
 		var d *server.EtcdDB = new(server.EtcdDB)
+		d.Print = *verbose
 		d.Timeout = 5 * time.Second
 		driver = d
 	}
@@ -119,17 +159,11 @@ func main() {
 	defer driver.Disconnect()
 
 	for i := 0; i < *routines; i++ {
-		go func() {
-			log.Println("Started goroutine")
-			for l := range lines {
-				err := driver.UploadRR(l)
-				if err != nil {
-					log.Printf("Error uploading %s: %v", l, err)
-				}
-			}
-		}()
+		wg.Add(1)
+		go uploadWorker(driver, lines, &wg)
 	}
 
+	// Manual process termination
 	sig := make(chan os.Signal)
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
 	s := <-sig
