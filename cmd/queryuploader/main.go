@@ -100,6 +100,7 @@ func readZones(ch chan string, name string, wg *sync.WaitGroup) {
 
 	wg.Done()
 	// When upload is complete exit
+	close(ch)
 	wg.Wait()
 }
 
