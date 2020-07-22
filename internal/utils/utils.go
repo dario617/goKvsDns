@@ -21,6 +21,7 @@ func ReadAndParseZoneFile(fileName, zoneName string) ([]dns.RR, error) {
 	if err != nil {
 		return rrs, err
 	}
+	defer file.Close()
 
 	zone := dns.NewZoneParser(file, currentZone, "")
 	if err := zone.Err(); err != nil {

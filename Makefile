@@ -34,11 +34,11 @@ clean: $(STOP_DB)
 
 run: $(RUN_DB)
 		$(GOBUILD) -o $(BINARY_NAME) -v
-		./$(BINARY_NAME) --clusterIPs $(CLUSTER_IPS) --print --soreuseport $(CPU_NUMBER) --cpu $(CPU_NUMBER)
+		./$(BINARY_NAME) --clusterIPs $(CLUSTER_IPS) --print --soreuseport $(CPU_NUMBER) --cpu $(CPU_NUMBER) --db $(DB)
 
 run_standalone:
 		$(GOBUILD) -o $(BINARY_NAME) -v
-		./$(BINARY_NAME) --clusterIPs $(CLUSTER_IPS) --print --soreuseport $(CPU_NUMBER) --cpu $(CPU_NUMBER)
+		./$(BINARY_NAME) --clusterIPs $(CLUSTER_IPS) --print --soreuseport $(CPU_NUMBER) --cpu $(CPU_NUMBER) --db $(DB)
 
 build_cmd: build_requester build_uploader
 
