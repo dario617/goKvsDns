@@ -20,7 +20,7 @@
 - name: Extract files
   unarchive:
     src: "~/{{working_directory}}/redis-5.0.8.tar.gz"
-    dest: ~/
+    dest: "~/{{working_directory}}/"
     remote_src: yes
   when: downloaded_targz.changed
   register: extracted_targz
