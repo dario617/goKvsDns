@@ -8,7 +8,7 @@
     patterns: '.*redis-5*'
   register: redis_folder
 
-- name: Ensures {{redis_folder.files[0].path}}/conf dir exists
+- name: Ensures redis/conf dir exists
   file: 
     path: "{{redis_folder.files[0].path}}/conf"
     state: directory

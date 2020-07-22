@@ -23,7 +23,7 @@
   register: extracted_targz
 
 - name: Remove files
-  command: rm "~/{{working_directory}}/etcd-v3.4.0-linux-amd64.tar.gz"
+  command: "rm ~/{{working_directory}}/etcd-v3.4.0-linux-amd64.tar.gz"
   when: extracted_targz.changed
 
 - name: Etcd is Present locally after extraction
