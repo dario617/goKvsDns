@@ -17,7 +17,7 @@
 - name: Extract files
   unarchive:
     src: "~/{{working_directory}}/etcd-v3.4.0-linux-amd64.tar.gz"
-    dest: ~/
+    dest: "~/{{working_directory}}"
     remote_src: yes
   when: downloaded_targz.changed
   register: extracted_targz
@@ -35,8 +35,8 @@
   register: etcd_folder_extracted
   
 - name: Move files to /usr/local/bin
-  command:  
-    cmd: cp -t /usr/local/bin/ etcd etcdctl
+  command: cp -t /usr/local/bin/ etcd etcdctl
+  args:
     chdir: "{{etcd_folder_extracted.files[0].path}}"
   become: yes
   when: etcd_folder_extracted.matched != 0

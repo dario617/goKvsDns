@@ -18,7 +18,7 @@ Since the application is meant to be backend distributed with a single entrypoin
 
 On the main machine:
 * Go 1.14
-* Ansible via python or package manager
+* Ansible >= 2.7 via python or package manager
 * An SSH Key
 
 On each machine:
