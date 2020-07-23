@@ -425,7 +425,7 @@ func (edb *EtcdDB) UploadRR(line string) error {
 			return err
 		}
 	case "MX":
-		var key string = tk[0] + ":HINFO"
+		var key string = tk[0] + ":MX"
 		var newRR string = tk[1] + " " + tk[4]
 
 		err := edb.putValueOnSet(&key, &newRR)
