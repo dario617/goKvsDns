@@ -49,7 +49,7 @@ func Start(db, rawIps string, soreuseport, port int, verbose bool) DBDriver {
 	case "etcd":
 		var d *EtcdDB = new(EtcdDB)
 		d.Print = verbose
-		d.Timeout = 5 * time.Second
+		d.Timeout = 10 * time.Second // Generous times for stressfull scenarios
 		driver = d
 	}
 
