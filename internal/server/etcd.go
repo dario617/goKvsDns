@@ -177,7 +177,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		}
 		if resp == "" {
 			// No value found
-			return 0 // No error
+			return 5 // Refused
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -197,7 +197,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		}
 		if resp == "" {
 			// No value found
-			return 0 // No error
+			return 5 // Refused
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -218,7 +218,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		}
 		if resp == "" {
 			// No value found
-			return 0 // No error
+			return 5 // Refused
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -239,7 +239,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		}
 		if resp == "" {
 			// No value found
-			return 0 // No error
+			return 5 // Refused
 		}
 		values := strings.Split(resp, " ")
 		// ttl mname rname serial refresh retry expire minimum
@@ -267,7 +267,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		}
 		if resp == "" {
 			// No value found
-			return 0 // No error
+			return 5 // Refused
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -288,7 +288,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		}
 		if resp == "" {
 			// No value found
-			return 0 // No error
+			return 5 // Refused
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -310,7 +310,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		}
 		if resp == "" {
 			// No value found
-			return 0 // No error
+			return 5 // Refused
 		}
 		records := strings.Split(resp, ",")
 		for i := range records {
@@ -334,7 +334,7 @@ func (edb *EtcdDB) MakeQuery(m *dns.Msg) int {
 		// TTL val1 val2 val3 ...
 		if resp == "" {
 			// No value found
-			return 0 // No error
+			return 5 // Refused
 		}
 		records := strings.Split(resp, ",")
 		ttl, _ := strconv.Atoi(records[0])
@@ -463,11 +463,11 @@ func (edb *EtcdDB) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	}
 
 	if r.MsgHdr.Authoritative {
-		m.MsgHdr.Rcode = 4 // Not implemented
+		m.Rcode = 4 // Not implemented
 		w.WriteMsg(m)
 	} else {
 		rcode := edb.MakeQuery(m)
-		m.MsgHdr.Rcode = rcode
+		m.Rcode = rcode
 		w.WriteMsg(m)
 	}
 }

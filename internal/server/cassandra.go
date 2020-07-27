@@ -359,11 +359,11 @@ func (c *CassandraDB) Handle(w dns.ResponseWriter, r *dns.Msg) {
 	}
 
 	if r.MsgHdr.Authoritative {
-		m.MsgHdr.Rcode = 4 // Not implemented
+		m.Rcode = 4 // Not implemented
 		w.WriteMsg(m)
 	} else {
 		rcode := c.MakeQuery(m)
-		m.MsgHdr.Rcode = rcode
+		m.Rcode = rcode
 		w.WriteMsg(m)
 	}
 }
