@@ -40,4 +40,13 @@
           responses:
             "Can I set the above configuration?": "yes"
         when: redis_folder.matched > 0
+        ignore_errors: yes # When nodes already know each other
+
+      - name: Check health
+        command: "./redis-cli --cluster check 127.0.0.0:7001"
+        register: health
+
+      - name: Debug health
+        debug:
+          var: health
 # Check state on a local cluster machine using redis-cli --cluster check [host:port]
