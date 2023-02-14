@@ -9,7 +9,7 @@ require (
 	github.com/coreos/pkg v0.0.0-20180928190104-399ea9e2e55f // indirect
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/gocql/gocql v0.0.0-20200511135441-57b003a04490
-	github.com/gogo/protobuf v1.3.1 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/miekg/dns v1.1.29
 	github.com/onsi/ginkgo v1.12.2 // indirect
